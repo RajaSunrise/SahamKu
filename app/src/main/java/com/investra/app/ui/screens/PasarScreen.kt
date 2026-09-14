@@ -386,7 +386,7 @@ fun IndexCard(name: String, value: String, changePct: String, modifier: Modifier
             Canvas(modifier = Modifier.fillMaxWidth().height(16.dp)) {
                 val path = Path().apply {
                     moveTo(0f, size.height * 0.8f)
-                    quadraticTo(size.width * 0.3f, size.height * 0.6f, size.width * 0.6f, size.height * 0.3f)
+                    quadraticBezierTo(size.width * 0.3f, size.height * 0.6f, size.width * 0.6f, size.height * 0.3f)
                     lineTo(size.width, size.height * 0.1f)
                 }
                 drawPath(path = path, color = PrimaryEmerald, style = Stroke(width = 2.dp.toPx()))

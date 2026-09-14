@@ -24,7 +24,7 @@ import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Remove
-import androidx.compose.material.icons.filled.ShieldWithHeart
+import androidx.compose.material.icons.filled.Shield
 import androidx.compose.material.icons.filled.ShoppingBag
 import androidx.compose.material.icons.filled.VerifiedUser
 import androidx.compose.material3.Button
@@ -239,7 +239,7 @@ fun DemoBuyDialog(
                 // Protection Toggles (TP & SL)
                 Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
-                        Icon(imageVector = Icons.Default.ShieldWithHeart, contentDescription = "Protection", tint = PrimaryEmerald, modifier = Modifier.size(16.dp))
+                        Icon(imageVector = Icons.Default.Shield, contentDescription = "Protection", tint = PrimaryEmerald, modifier = Modifier.size(16.dp))
                         Spacer(modifier = Modifier.width(4.dp))
                         Text(text = "Proteksi Otomatis Demo", color = TextMain, fontWeight = FontWeight.SemiBold, fontSize = 12.sp)
                     }

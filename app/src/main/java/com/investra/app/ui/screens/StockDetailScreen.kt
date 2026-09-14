@@ -70,6 +70,7 @@ import com.investra.app.ui.theme.PrimaryEmerald
 import com.investra.app.ui.theme.SecondaryBlue
 import com.investra.app.ui.theme.SurfaceContainer
 import com.investra.app.ui.theme.SurfaceContainerHigh
+import com.investra.app.ui.theme.SurfaceContainerHighest
 import com.investra.app.ui.theme.SurfaceContainerLow
 import com.investra.app.ui.theme.SurfaceContainerLowest
 import com.investra.app.ui.theme.TertiaryContainer
