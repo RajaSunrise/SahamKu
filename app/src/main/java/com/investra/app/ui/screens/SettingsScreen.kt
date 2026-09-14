@@ -24,7 +24,7 @@ import androidx.compose.material.icons.filled.QueryStats
 import androidx.compose.material.icons.filled.RestartAlt
 import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material.icons.filled.Sell
-import androidx.compose.material.icons.filled.ShieldWithHeart
+import androidx.compose.material.icons.filled.Shield
 import androidx.compose.material.icons.filled.Tune
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -280,7 +280,7 @@ fun SettingsScreen(
                     verticalAlignment = Alignment.Top,
                     horizontalArrangement = Arrangement.spacedBy(10.dp)
                 ) {
-                    Icon(imageVector = Icons.Default.ShieldWithHeart, contentDescription = "Shield", tint = PrimaryEmerald, modifier = Modifier.size(20.dp))
+                    Icon(imageVector = Icons.Default.Shield, contentDescription = "Shield", tint = PrimaryEmerald, modifier = Modifier.size(20.dp))
                     Column {
                         Text(text = "Lingkungan Bebas Risiko", color = TextMain, fontWeight = FontWeight.Bold, fontSize = 12.sp)
                         Text(
@@ -301,7 +301,7 @@ fun SettingsScreen(
                 modifier = Modifier.fillMaxWidth().padding(vertical = 12.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                Text(text = "Investra US Simulator v2.4.0", color = TextMuted, fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                Text(text = "SahamKu US Simulator v2.4.0", color = TextMuted, fontSize = 11.sp, fontWeight = FontWeight.Bold)
                 Text(text = "Lingkungan Simulasi Terproteksi • Sandbox Paper Trading", color = TextMuted, fontSize = 10.sp)
             }
         }

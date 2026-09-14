@@ -44,7 +44,8 @@ class TradingViewRepository {
                 {
                   "filter": [
                     {"left": "type", "operation": "equal", "right": "stock"},
-                    {"left": "subtype", "operation": "equal", "right": "common"}
+                    {"left": "subtype", "operation": "equal", "right": "common"},
+                    {"left": "market_cap_basic", "operation": "egreater", "right": 1000000000}
                   ],
                   "options": {"lang": "en"},
                   "markets": ["america"],
@@ -147,8 +148,9 @@ class TradingViewRepository {
                     }
                 }
 
-                if (stocks.isNotEmpty()) {
-                    Result.success(stocks)
+                val filteredStocks = stocks.filter { it.marketCap >= 1_000_000_000.0 }
+                if (filteredStocks.isNotEmpty()) {
+                    Result.success(filteredStocks)
                 } else {
                     Result.success(getFallbackStocks(category))
                 }
@@ -194,7 +196,7 @@ class TradingViewRepository {
     }
 
     fun getFallbackStocks(category: String = "gainers"): List<Stock> {
-        return when (category) {
+        val list = when (category) {
             "gainers" -> listOf(
                 Stock("NVDA", "NVIDIA Corporation", "NASDAQ", 142.50, 7.32, 5.42, 14200000000.0, "14.2B", 0.85, "STRONG BUY", 62.4, "Bullish Crossover", 138.45, 132.80, "Semikonduktor AI", "Technology", 3.5e12, "Catalyst: AI Chip Surge", 136.0, 145.0, 152.0, 160.0, 136.0),
                 Stock("TSLA", "Tesla, Inc.", "NASDAQ", 224.80, 10.40, 4.85, 9800000000.0, "9.8B", 0.72, "BUY", 58.5, "Bullish Crossover", 218.00, 205.50, "Automotive Tech", "Consumer Cyclical", 7.2e11, "Breakout MA-20 Bullish", 212.0, 230.0, 240.0, 255.0, 210.0),
@@ -213,5 +215,6 @@ class TradingViewRepository {
             )
             else -> getFallbackStocks("gainers")
         }
+        return list.filter { it.marketCap >= 1_000_000_000.0 }
     }
 }

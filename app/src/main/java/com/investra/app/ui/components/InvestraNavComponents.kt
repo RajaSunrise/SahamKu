@@ -15,7 +15,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.outlined.Insights
-import androidx.compose.material.icons.outlined.Monitoring
+import androidx.compose.material.icons.outlined.ShowChart
 import androidx.compose.material.icons.outlined.PieChart
 import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.material3.Icon
@@ -61,7 +61,7 @@ fun InvestraHeader(
                 contentAlignment = Alignment.Center
             ) {
                 Text(
-                    text = "I",
+                    text = "S",
                     color = Color.White,
                     fontWeight = FontWeight.Bold,
                     fontSize = 18.sp
@@ -73,7 +73,7 @@ fun InvestraHeader(
                     horizontalArrangement = Arrangement.spacedBy(6.dp)
                 ) {
                     Text(
-                        text = "Investra",
+                        text = "SahamKu",
                         color = TextMain,
                         fontWeight = FontWeight.Bold,
                         fontSize = 18.sp
@@ -139,7 +139,7 @@ fun InvestraHeader(
 }
 
 enum class NavTab(val route: String, val label: String, val icon: ImageVector) {
-    PASAR("pasar", "Pasar", Icons.Outlined.Monitoring),
+    PASAR("pasar", "Pasar", Icons.Outlined.ShowChart),
     REKOMENDASI("rekomendasi", "Rekomendasi", Icons.Outlined.Insights),
     PORTOFOLIO("portofolio", "Portofolio", Icons.Outlined.PieChart),
     PENGATURAN("pengaturan", "Pengaturan", Icons.Outlined.Settings)
