@@ -46,9 +46,9 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.investra.app.data.model.Stock
 import com.investra.app.ui.MainViewModel
+import com.investra.app.ui.components.StockLogoImage
 import com.investra.app.ui.theme.PrimaryContainer
 import com.investra.app.ui.theme.PrimaryEmerald
-import com.investra.app.ui.theme.SecondaryBlue
 import com.investra.app.ui.theme.SurfaceContainer
 import com.investra.app.ui.theme.SurfaceContainerHigh
 import com.investra.app.ui.theme.SurfaceContainerLow
@@ -63,14 +63,15 @@ fun RekomendasiScreen(
     onQuickBuyClick: (Stock) -> Unit
 ) {
     val selectedTf by viewModel.selectedTimeframe.collectAsState()
+    val gainers by viewModel.gainers.collectAsState()
     val timeframes = listOf("4 Jam", "1 Hari", "1 Minggu", "1 Bulan", "1 Tahun")
 
-    val aaplStock = Stock("AAPL", "Apple Inc.", "NASDAQ", 232.50, 2.71, 1.18, 18500000000.0, "18.5B", 0.85, "STRONG BUY", 58.20, "Golden Cross", 228.00, 220.00, "Consumer Electronics", "Technology", 3.5e12, "Daily Swing Pick", 226.0, 235.0, 248.0, 260.0, 226.0)
+    val aaplStock = gainers.firstOrNull() ?: Stock("AAPL", "Apple Inc.", "NASDAQ", 232.50, 2.71, 1.18, 18500000000.0, "18.5B", 0.85, "STRONG BUY", 58.20, "Golden Cross", 228.00, 220.00, "Consumer Electronics", "Technology", 3.5e12, "Daily Swing Pick", 226.0, 235.0, 248.0, 260.0, 226.0, logoUrl = "https://s3-symbol-logo.tradingview.com/apple.svg")
 
-    val secondaryStocks = listOf(
-        Stock("MSFT", "Microsoft Corp", "NASDAQ", 448.20, 8.20, 1.86, 12400000000.0, "12.4B", 0.78, "BUY", 54.0, "Ascending Triangle", 438.00, 425.00, "Software Cloud", "Technology", 3.3e12, "Volume melonjak +22%", 439.0, 455.0, 471.5, 490.0, 439.0),
-        Stock("AMZN", "Amazon.com Inc", "NASDAQ", 186.40, 3.20, 1.75, 10200000000.0, "10.2B", 0.75, "ACCUMULATE", 56.8, "Cup & Handle Pattern", 182.00, 178.00, "E-Commerce Cloud", "Consumer Cyclical", 1.9e12, "Rebound dari Support EMA 50", 181.0, 192.0, 202.0, 215.0, 181.0),
-        Stock("GOOGL", "Alphabet Inc", "NASDAQ", 165.10, 2.10, 1.29, 8800000000.0, "8.8B", 0.68, "BUY ON DIP", 48.5, "Fib 61.8% Bounce", 162.00, 158.00, "Internet Media", "Communication", 2.0e12, "Reversal Candlestick Hammer", 161.5, 168.0, 173.2, 182.0, 161.5)
+    val secondaryStocks = if (gainers.size > 1) gainers.drop(1).take(3) else listOf(
+        Stock("MSFT", "Microsoft Corp", "NASDAQ", 448.20, 8.20, 1.86, 12400000000.0, "12.4B", 0.78, "BUY", 54.0, "Ascending Triangle", 438.00, 425.00, "Software Cloud", "Technology", 3.3e12, "Volume melonjak +22%", 439.0, 455.0, 471.5, 490.0, 439.0, logoUrl = "https://s3-symbol-logo.tradingview.com/microsoft.svg"),
+        Stock("AMZN", "Amazon.com Inc", "NASDAQ", 186.40, 3.20, 1.75, 10200000000.0, "10.2B", 0.75, "BUY", 56.8, "Cup & Handle Pattern", 182.00, 178.00, "E-Commerce Cloud", "Consumer Cyclical", 1.9e12, "Rebound dari Support EMA 50", 181.0, 192.0, 202.0, 215.0, 181.0, logoUrl = "https://s3-symbol-logo.tradingview.com/amazon.svg"),
+        Stock("GOOGL", "Alphabet Inc", "NASDAQ", 165.10, 2.10, 1.29, 8800000000.0, "8.8B", 0.68, "BUY ON DIP", 48.5, "Fib 61.8% Bounce", 162.00, 158.00, "Internet Media", "Communication", 2.0e12, "Reversal Candlestick Hammer", 161.5, 168.0, 173.2, 182.0, 161.5, logoUrl = "https://s3-symbol-logo.tradingview.com/alphabet.svg")
     )
 
     LazyColumn(
@@ -203,18 +204,10 @@ fun RekomendasiScreen(
                         verticalAlignment = Alignment.Top
                     ) {
                         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                            Box(
-                                modifier = Modifier
-                                    .size(44.dp)
-                                    .clip(RoundedCornerShape(12.dp))
-                                    .background(SurfaceContainerHigh),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                Text(text = "AP", color = TextMain, fontWeight = FontWeight.Bold, fontSize = 18.sp)
-                            }
+                            StockLogoImage(ticker = aaplStock.ticker, logoUrl = aaplStock.logoUrl, size = 44.dp, fontSize = 18)
                             Column {
                                 Row(verticalAlignment = Alignment.CenterVertically) {
-                                    Text(text = "AAPL", color = TextMain, fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                                    Text(text = aaplStock.ticker, color = TextMain, fontWeight = FontWeight.Bold, fontSize = 16.sp)
                                     Spacer(modifier = Modifier.width(6.dp))
                                     Box(
                                         modifier = Modifier
@@ -222,10 +215,10 @@ fun RekomendasiScreen(
                                             .background(SurfaceContainerHigh)
                                             .padding(horizontal = 6.dp, vertical = 2.dp)
                                     ) {
-                                        Text(text = "NASDAQ", color = TextMuted, fontSize = 10.sp)
+                                        Text(text = aaplStock.exchange, color = TextMuted, fontSize = 10.sp)
                                     }
                                 }
-                                Text(text = "Apple Inc.", color = TextMuted, fontSize = 11.sp)
+                                Text(text = aaplStock.name, color = TextMuted, fontSize = 11.sp)
                             }
                         }
 
@@ -239,7 +232,7 @@ fun RekomendasiScreen(
                                 Row(verticalAlignment = Alignment.CenterVertically) {
                                     Icon(imageVector = Icons.Default.TrendingUp, contentDescription = "Strong Buy", tint = PrimaryEmerald, modifier = Modifier.size(14.dp))
                                     Spacer(modifier = Modifier.width(4.dp))
-                                    Text(text = "STRONG BUY", color = PrimaryEmerald, fontWeight = FontWeight.Bold, fontSize = 11.sp)
+                                    Text(text = aaplStock.recommendationText, color = PrimaryEmerald, fontWeight = FontWeight.Bold, fontSize = 11.sp)
                                 }
                             }
                             Text(text = "Daily Swing Pick", color = TextMuted, fontSize = 10.sp, modifier = Modifier.padding(top = 2.dp))
@@ -258,15 +251,15 @@ fun RekomendasiScreen(
                         Column {
                             Text(text = "HARGA SEKARANG", color = TextMuted, fontSize = 10.sp, fontWeight = FontWeight.SemiBold)
                             Row(verticalAlignment = Alignment.Bottom) {
-                                Text(text = "$232.50", color = TextMain, fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                                Text(text = "$${String.format("%.2f", aaplStock.price)}", color = TextMain, fontWeight = FontWeight.Bold, fontSize = 16.sp)
                                 Spacer(modifier = Modifier.width(4.dp))
-                                Text(text = "+1.18%", color = PrimaryEmerald, fontSize = 11.sp)
+                                Text(text = "${if (aaplStock.changePercent >= 0) "+" else ""}${String.format("%.2f", aaplStock.changePercent)}%", color = PrimaryEmerald, fontSize = 11.sp)
                             }
                         }
                         Column(horizontalAlignment = Alignment.End) {
                             Text(text = "TARGET KENAIKAN", color = TextMuted, fontSize = 10.sp, fontWeight = FontWeight.SemiBold)
                             Row(verticalAlignment = Alignment.Bottom) {
-                                Text(text = "$248.00", color = PrimaryEmerald, fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                                Text(text = "$${String.format("%.2f", aaplStock.targetPrice1)}", color = PrimaryEmerald, fontWeight = FontWeight.Bold, fontSize = 16.sp)
                                 Spacer(modifier = Modifier.width(4.dp))
                                 Text(text = "(+6.67%)", color = PrimaryEmerald, fontSize = 11.sp, fontWeight = FontWeight.SemiBold)
                             }
@@ -296,8 +289,8 @@ fun RekomendasiScreen(
                             modifier = Modifier.fillMaxWidth(),
                             horizontalArrangement = Arrangement.SpaceBetween
                         ) {
-                            Text(text = "Cut Loss: $226.00 (-2.80%)", color = TertiaryContainer, fontSize = 10.sp)
-                            Text(text = "Target: $248.00 (+6.67%)", color = PrimaryEmerald, fontSize = 10.sp)
+                            Text(text = "Cut Loss: $${String.format("%.2f", aaplStock.stopLossPrice)}", color = TertiaryContainer, fontSize = 10.sp)
+                            Text(text = "Target: $${String.format("%.2f", aaplStock.targetPrice1)}", color = PrimaryEmerald, fontSize = 10.sp)
                         }
                     }
 
@@ -307,8 +300,8 @@ fun RekomendasiScreen(
                         horizontalArrangement = Arrangement.spacedBy(6.dp)
                     ) {
                         IndicatorTile(title = "Moving Avg", value = "Golden Cross", sub = "EMA 20/50 Valid", modifier = Modifier.weight(1f))
-                        IndicatorTile(title = "RSI (14)", value = "58.20", sub = "Bullish Momentum", modifier = Modifier.weight(1f))
-                        IndicatorTile(title = "Key Level", value = "Breakout", sub = "Resist $230 Ditembus", modifier = Modifier.weight(1f))
+                        IndicatorTile(title = "RSI (14)", value = "${aaplStock.rsi.toInt()}", sub = "Bullish Momentum", modifier = Modifier.weight(1f))
+                        IndicatorTile(title = "Key Level", value = "Breakout", sub = "Resist Ditembus", modifier = Modifier.weight(1f))
                     }
 
                     // Action Bar
@@ -328,7 +321,7 @@ fun RekomendasiScreen(
                             Text(text = "Simulasi Beli Sekarang", color = Color(0xFF003824), fontWeight = FontWeight.Bold, fontSize = 13.sp)
                         }
                         IconButton(
-                            onClick = { viewModel.toggleWatchlist("AAPL") },
+                            onClick = { viewModel.toggleWatchlist(aaplStock.ticker) },
                             modifier = Modifier
                                 .clip(RoundedCornerShape(10.dp))
                                 .background(SurfaceContainer)
@@ -352,7 +345,7 @@ fun RekomendasiScreen(
                     Spacer(modifier = Modifier.width(6.dp))
                     Text(text = "Peluang Teknikal Lainnya", color = TextMain, fontWeight = FontWeight.Bold, fontSize = 15.sp)
                 }
-                Text(text = "3 Sinyal Aktif", color = TextMuted, fontSize = 11.sp)
+                Text(text = "${secondaryStocks.size} Sinyal Aktif", color = TextMuted, fontSize = 11.sp)
             }
         }
 
@@ -372,12 +365,7 @@ fun RekomendasiScreen(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                            Box(
-                                modifier = Modifier.size(36.dp).clip(RoundedCornerShape(8.dp)).background(SurfaceContainerHigh),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                Text(text = stock.ticker.take(1), color = TextMain, fontWeight = FontWeight.Bold, fontSize = 14.sp)
-                            }
+                            StockLogoImage(ticker = stock.ticker, logoUrl = stock.logoUrl, size = 36.dp, fontSize = 14)
                             Column {
                                 Text(text = stock.name, color = TextMain, fontWeight = FontWeight.Bold, fontSize = 14.sp)
                                 Text(text = stock.catalyst, color = TextMuted, fontSize = 11.sp)
@@ -456,7 +444,7 @@ fun RekomendasiScreen(
                     Column {
                         Text(text = "Catatan Edukasi & Risiko", color = TextMain, fontWeight = FontWeight.SemiBold, fontSize = 12.sp)
                         Text(
-                            text = "Sinyal dihitung otomatis berbasis indikator momentum & volume. Gunakan dana simulasi ($100K demo) untuk menguji strategi tanpa risiko modal riil.",
+                            text = "Sinyal dihitung otomatis berbasis indikator momentum & volume TradingView. Gunakan dana simulasi ($100K demo) untuk menguji strategi tanpa risiko modal riil.",
                             color = TextMuted,
                             fontSize = 11.sp,
                             lineHeight = 15.sp,

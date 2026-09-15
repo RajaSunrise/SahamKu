@@ -12,21 +12,14 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.ArrowDropUp
-import androidx.compose.material.icons.filled.Bolt
 import androidx.compose.material.icons.filled.CandlestickChart
-import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Close
-import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Remove
 import androidx.compose.material.icons.filled.Shield
 import androidx.compose.material.icons.filled.ShoppingBag
-import androidx.compose.material.icons.filled.VerifiedUser
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
@@ -35,10 +28,6 @@ import androidx.compose.material3.Checkbox
 import androidx.compose.material3.CheckboxDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.OutlinedTextFieldDefaults
-import androidx.compose.material3.Slider
-import androidx.compose.material3.SliderDefaults
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -52,13 +41,13 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import com.investra.app.data.model.Position
 import com.investra.app.data.model.Stock
 import com.investra.app.ui.MainViewModel
+import com.investra.app.ui.components.StockLogoImage
 import com.investra.app.ui.theme.PrimaryContainer
 import com.investra.app.ui.theme.PrimaryEmerald
 import com.investra.app.ui.theme.SurfaceContainer
@@ -80,10 +69,8 @@ fun DemoBuyDialog(
     var orderType by remember { mutableStateOf("Market Order") }
     var tpChecked by remember { mutableStateOf(true) }
     var slChecked by remember { mutableStateOf(true) }
-    var showSuccessModal by remember { mutableStateOf(false) }
 
     val totalCost = stock.price * shares
-    val remainingCash = virtualCash - totalCost
     val tpProfit = shares * (stock.price * 0.08)
     val slLoss = shares * (stock.price * 0.03)
 
@@ -104,12 +91,7 @@ fun DemoBuyDialog(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        Box(
-                            modifier = Modifier.size(36.dp).clip(RoundedCornerShape(8.dp)).background(PrimaryContainer.copy(alpha = 0.2f)),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Icon(imageVector = Icons.Default.CandlestickChart, contentDescription = "Order", tint = PrimaryEmerald, modifier = Modifier.size(20.dp))
-                        }
+                        StockLogoImage(ticker = stock.ticker, logoUrl = stock.logoUrl, size = 36.dp, fontSize = 16)
                         Column {
                             Row(verticalAlignment = Alignment.CenterVertically) {
                                 Text(text = stock.ticker, color = TextMain, fontWeight = FontWeight.Bold, fontSize = 16.sp)
@@ -136,7 +118,7 @@ fun DemoBuyDialog(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Column {
-                        Text(text = "Harga Eksekusi", color = TextMuted, fontSize = 10.sp)
+                        Text(text = "Harga Eksekusi Real-time", color = TextMuted, fontSize = 10.sp)
                         Text(text = "$${String.format("%.2f", stock.price)} USD", color = PrimaryEmerald, fontWeight = FontWeight.Bold, fontSize = 14.sp)
                     }
                     Column(horizontalAlignment = Alignment.End) {
@@ -351,13 +333,16 @@ fun DemoSellDialog(
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Column {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Text(text = position.ticker, color = TextMain, fontWeight = FontWeight.Bold, fontSize = 18.sp)
-                            Spacer(modifier = Modifier.width(6.dp))
-                            Text(text = position.exchange, color = TextMuted, fontSize = 10.sp)
+                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        StockLogoImage(ticker = position.ticker, size = 36.dp, fontSize = 16)
+                        Column {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Text(text = position.ticker, color = TextMain, fontWeight = FontWeight.Bold, fontSize = 18.sp)
+                                Spacer(modifier = Modifier.width(6.dp))
+                                Text(text = position.exchange, color = TextMuted, fontSize = 10.sp)
+                            }
+                            Text(text = position.name, color = TextMuted, fontSize = 11.sp)
                         }
-                        Text(text = position.name, color = TextMuted, fontSize = 11.sp)
                     }
 
                     IconButton(onClick = onDismiss) {
@@ -379,7 +364,7 @@ fun DemoSellDialog(
                         Text(text = "${position.shares} Lembar", color = TextMain, fontWeight = FontWeight.Bold, fontSize = 13.sp)
                     }
                     Column(horizontalAlignment = Alignment.End) {
-                        Text(text = "Harga Pasar", color = TextMuted, fontSize = 10.sp)
+                        Text(text = "Harga Pasar Real-time", color = TextMuted, fontSize = 10.sp)
                         Text(text = "$${String.format("%.2f", position.currentPrice)}", color = PrimaryEmerald, fontWeight = FontWeight.Bold, fontSize = 13.sp)
                     }
                 }

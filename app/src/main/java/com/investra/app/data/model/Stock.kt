@@ -24,5 +24,6 @@ data class Stock(
     val targetPrice1: Double = price * 1.07,
     val targetPrice2: Double = price * 1.12,
     val stopLossPrice: Double = price * 0.95,
-    val sparklinePoints: List<Float> = listOf(10f, 12f, 11f, 15f, 18f, 22f, 25f, 28f)
+    val sparklinePoints: List<Float> = listOf(10f, 12f, 11f, 15f, 18f, 22f, 25f, 28f),
+    val logoUrl: String? = null
 )
