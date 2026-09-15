@@ -59,8 +59,7 @@ import com.investra.app.ui.theme.TextMuted
 @Composable
 fun RekomendasiScreen(
     viewModel: MainViewModel,
-    onStockClick: (Stock) -> Unit,
-    onQuickBuyClick: (Stock) -> Unit
+    onStockClick: (Stock) -> Unit
 ) {
     val selectedTf by viewModel.selectedTimeframe.collectAsState()
     val gainers by viewModel.gainers.collectAsState()
@@ -203,9 +202,13 @@ fun RekomendasiScreen(
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.Top
                     ) {
-                        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                        Row(
+                            modifier = Modifier.weight(1f),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(10.dp)
+                        ) {
                             StockLogoImage(ticker = aaplStock.ticker, logoUrl = aaplStock.logoUrl, size = 44.dp, fontSize = 18)
-                            Column {
+                            Column(modifier = Modifier.weight(1f)) {
                                 Row(verticalAlignment = Alignment.CenterVertically) {
                                     Text(text = aaplStock.ticker, color = TextMain, fontWeight = FontWeight.Bold, fontSize = 16.sp)
                                     Spacer(modifier = Modifier.width(6.dp))
@@ -218,9 +221,17 @@ fun RekomendasiScreen(
                                         Text(text = aaplStock.exchange, color = TextMuted, fontSize = 10.sp)
                                     }
                                 }
-                                Text(text = aaplStock.name, color = TextMuted, fontSize = 11.sp)
+                                Text(
+                                    text = aaplStock.name,
+                                    color = TextMuted,
+                                    fontSize = 11.sp,
+                                    maxLines = 1,
+                                    overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
+                                )
                             }
                         }
+
+                        Spacer(modifier = Modifier.width(8.dp))
 
                         Column(horizontalAlignment = Alignment.End) {
                             Box(
@@ -311,14 +322,14 @@ fun RekomendasiScreen(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Button(
-                            onClick = { onQuickBuyClick(aaplStock) },
+                            onClick = { onStockClick(aaplStock) },
                             colors = ButtonDefaults.buttonColors(containerColor = PrimaryEmerald),
                             shape = RoundedCornerShape(10.dp),
                             modifier = Modifier.weight(1f).height(44.dp)
                         ) {
-                            Icon(imageVector = Icons.Default.PlayCircle, contentDescription = "Buy", tint = Color(0xFF003824), modifier = Modifier.size(18.dp))
+                            Icon(imageVector = Icons.Default.PlayCircle, contentDescription = "Detail", tint = Color(0xFF003824), modifier = Modifier.size(18.dp))
                             Spacer(modifier = Modifier.width(6.dp))
-                            Text(text = "Simulasi Beli Sekarang", color = Color(0xFF003824), fontWeight = FontWeight.Bold, fontSize = 13.sp)
+                            Text(text = "Lihat Detail Saham", color = Color(0xFF003824), fontWeight = FontWeight.Bold, fontSize = 13.sp)
                         }
                         IconButton(
                             onClick = { viewModel.toggleWatchlist(aaplStock.ticker) },
@@ -364,13 +375,33 @@ fun RekomendasiScreen(
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Row(
+                            modifier = Modifier.weight(1f),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
                             StockLogoImage(ticker = stock.ticker, logoUrl = stock.logoUrl, size = 36.dp, fontSize = 14)
-                            Column {
-                                Text(text = stock.name, color = TextMain, fontWeight = FontWeight.Bold, fontSize = 14.sp)
-                                Text(text = stock.catalyst, color = TextMuted, fontSize = 11.sp)
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text(
+                                    text = stock.name,
+                                    color = TextMain,
+                                    fontWeight = FontWeight.Bold,
+                                    fontSize = 14.sp,
+                                    maxLines = 1,
+                                    overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
+                                )
+                                Text(
+                                    text = stock.catalyst,
+                                    color = TextMuted,
+                                    fontSize = 11.sp,
+                                    maxLines = 1,
+                                    overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
+                                )
                             }
                         }
+
+                        Spacer(modifier = Modifier.width(8.dp))
+
                         Box(
                             modifier = Modifier
                                 .clip(RoundedCornerShape(12.dp))
@@ -415,13 +446,13 @@ fun RekomendasiScreen(
                         }
 
                         Button(
-                            onClick = { onQuickBuyClick(stock) },
+                            onClick = { onStockClick(stock) },
                             colors = ButtonDefaults.buttonColors(containerColor = SurfaceContainerHigh),
                             shape = RoundedCornerShape(8.dp),
                             contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 10.dp, vertical = 4.dp),
                             modifier = Modifier.height(30.dp)
                         ) {
-                            Text(text = "Simulasi Order", color = PrimaryEmerald, fontSize = 11.sp, fontWeight = FontWeight.SemiBold)
+                            Text(text = "Analisis", color = PrimaryEmerald, fontSize = 11.sp, fontWeight = FontWeight.SemiBold)
                         }
                     }
                 }

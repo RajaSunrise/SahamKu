@@ -279,17 +279,29 @@ fun PositionCardItem(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.Top
             ) {
-                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                Row(
+                    modifier = Modifier.weight(1f),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(10.dp)
+                ) {
                     StockLogoImage(ticker = position.ticker, logoUrl = position.logoUrl, size = 38.dp, fontSize = 16)
-                    Column {
+                    Column(modifier = Modifier.weight(1f)) {
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Text(text = position.ticker, color = TextMain, fontWeight = FontWeight.Bold, fontSize = 15.sp)
                             Spacer(modifier = Modifier.width(6.dp))
                             Text(text = position.exchange, color = TextMuted, fontSize = 10.sp)
                         }
-                        Text(text = "${position.name} • $sharesText Lembar", color = TextMuted, fontSize = 11.sp)
+                        Text(
+                            text = "${position.name} • $sharesText Lembar",
+                            color = TextMuted,
+                            fontSize = 11.sp,
+                            maxLines = 1,
+                            overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
+                        )
                     }
                 }
+
+                Spacer(modifier = Modifier.width(8.dp))
 
                 Column(horizontalAlignment = Alignment.End) {
                     Text(

@@ -64,19 +64,26 @@ import com.investra.app.ui.theme.TertiaryContainer
 import com.investra.app.ui.theme.TextMain
 import com.investra.app.ui.theme.TextMuted
 
+import com.investra.app.data.model.Stock
+
 @Composable
 fun CalculatorScreen(
     viewModel: MainViewModel,
+    stock: Stock? = null,
     onBackClick: () -> Unit,
     onApplyToOrder: (Double, Double) -> Unit
 ) {
-    val calcState by viewModel.calculatorState.collectAsState()
+    val activeStock = stock ?: viewModel.selectedStock.collectAsState().value
+    val initialEntry = activeStock?.price ?: 142.50
+    val initialTarget = activeStock?.targetPrice1 ?: (initialEntry * 1.12)
+    val initialStop = activeStock?.stopLossPrice ?: (initialEntry * 0.95)
+    val initialTicker = activeStock?.ticker ?: "NVDA"
 
-    var entryText by remember { mutableStateOf(calcState.entryPrice.toString()) }
-    var sharesText by remember { mutableStateOf(calcState.shares.toString()) }
-    var targetText by remember { mutableStateOf(calcState.targetPrice.toString()) }
-    var stopText by remember { mutableStateOf(calcState.stopLossPrice.toString()) }
-    var selectedTicker by remember { mutableStateOf(calcState.ticker) }
+    var entryText by remember(activeStock?.ticker, activeStock?.price) { mutableStateOf(String.format("%.2f", initialEntry)) }
+    var sharesText by remember { mutableStateOf("100") }
+    var targetText by remember(activeStock?.ticker, activeStock?.price) { mutableStateOf(String.format("%.2f", initialTarget)) }
+    var stopText by remember(activeStock?.ticker, activeStock?.price) { mutableStateOf(String.format("%.2f", initialStop)) }
+    var selectedTicker by remember(activeStock?.ticker) { mutableStateOf(initialTicker) }
 
     val entry = entryText.toDoubleOrNull() ?: 142.50
     val shares = sharesText.toDoubleOrNull() ?: 100.0
@@ -125,8 +132,18 @@ fun CalculatorScreen(
         // Ticker Chips
         item {
             LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                val stockList = listOf("NVDA" to 142.50, "AAPL" to 228.20, "TSLA" to 254.30)
-                items(stockList, key = { it.first }) { (t, p) ->
+                val baseChips = mutableListOf<Pair<String, Double>>()
+                if (activeStock != null) {
+                    baseChips.add(activeStock.ticker to activeStock.price)
+                }
+                val defaultList = listOf("NVDA" to 142.50, "AAPL" to 228.20, "TSLA" to 254.30)
+                for (item in defaultList) {
+                    if (baseChips.none { it.first == item.first }) {
+                        baseChips.add(item)
+                    }
+                }
+
+                items(baseChips, key = { it.first }) { (t, p) ->
                     val isSelected = selectedTicker == t
                     Box(
                         modifier = Modifier
@@ -134,9 +151,9 @@ fun CalculatorScreen(
                             .background(if (isSelected) PrimaryEmerald else SurfaceContainerHigh)
                             .clickable {
                                 selectedTicker = t
-                                entryText = p.toString()
-                                targetText = (p * 1.12).toString()
-                                stopText = (p * 0.95).toString()
+                                entryText = String.format("%.2f", p)
+                                targetText = String.format("%.2f", p * 1.12)
+                                stopText = String.format("%.2f", p * 0.95)
                             }
                             .padding(horizontal = 14.dp, vertical = 8.dp)
                     ) {

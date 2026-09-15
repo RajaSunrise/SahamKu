@@ -689,7 +689,7 @@ fun StockDetailScreen(
                 ) {
                     Icon(imageVector = Icons.Default.ShoppingCartCheckout, contentDescription = "Checkout", tint = Color(0xFF003824), modifier = Modifier.size(20.dp))
                     Spacer(modifier = Modifier.width(6.dp))
-                    Text(text = "Beli Demo (Virtual Order)", color = Color(0xFF003824), fontWeight = FontWeight.Bold, fontSize = 14.sp)
+                    Text(text = "Beli", color = Color(0xFF003824), fontWeight = FontWeight.Bold, fontSize = 14.sp)
                 }
             }
         }
