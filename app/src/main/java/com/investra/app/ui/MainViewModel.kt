@@ -181,7 +181,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                     // Suppress and continue live loop
                 }
 
-                delay(1000) // 1-second interval
+                delay(5000) // 5-second interval for smooth performance and battery efficiency
             }
         }
     }

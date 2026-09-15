@@ -353,7 +353,7 @@ fun HistoryScreen(
                 }
             }
         } else {
-            items(tradeHistory) { trade ->
+            items(tradeHistory, key = { it.id }) { trade ->
                 val matchingStock = marketGainers.find { it.ticker == trade.ticker }
                 TradeHistoryCardItem(trade = trade, logoUrl = matchingStock?.logoUrl)
             }

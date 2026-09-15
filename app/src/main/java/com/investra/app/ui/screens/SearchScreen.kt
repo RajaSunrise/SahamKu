@@ -130,7 +130,7 @@ fun SearchScreen(
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 Text(text = "Pencarian Populer & Trending", color = TextMuted, fontSize = 11.sp, fontWeight = FontWeight.Bold)
                 LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    items(popularSearchTags) { tag ->
+                    items(popularSearchTags, key = { it }) { tag ->
                         Box(
                             modifier = Modifier
                                 .clip(RoundedCornerShape(20.dp))
@@ -189,7 +189,7 @@ fun SearchScreen(
                     }
                 }
             } else {
-                items(searchResults) { stock ->
+                items(searchResults, key = { it.ticker }) { stock ->
                     SearchResultCardItem(stock = stock, onClick = { onStockClick(stock) })
                 }
             }
@@ -198,7 +198,7 @@ fun SearchScreen(
                 Text(text = "Rekomendasi Saham Valuasi > $5B", color = TextMain, fontWeight = FontWeight.Bold, fontSize = 15.sp)
             }
 
-            items(popularGainers) { stock ->
+            items(popularGainers, key = { it.ticker }) { stock ->
                 SearchResultCardItem(stock = stock, onClick = { onStockClick(stock) })
             }
         }

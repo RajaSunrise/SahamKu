@@ -67,7 +67,6 @@ import com.investra.app.ui.theme.TextMuted
 fun SettingsScreen(
     viewModel: MainViewModel
 ) {
-    val virtualCash by viewModel.virtualCash.collectAsState()
     val initialCapital by viewModel.initialCapital.collectAsState()
 
     var selectedCapitalAmount by remember { mutableStateOf(100000.0) }
