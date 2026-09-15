@@ -19,6 +19,8 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccountBalanceWallet
 import androidx.compose.material.icons.filled.Analytics
+import androidx.compose.material.icons.filled.DarkMode
+import androidx.compose.material.icons.filled.LightMode
 import androidx.compose.material.icons.filled.CandlestickChart
 import androidx.compose.material.icons.filled.QueryStats
 import androidx.compose.material.icons.filled.RestartAlt
@@ -50,6 +52,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.investra.app.ui.MainViewModel
+import com.investra.app.ui.theme.AppThemeMode
 import com.investra.app.ui.theme.PrimaryContainer
 import com.investra.app.ui.theme.PrimaryEmerald
 import com.investra.app.ui.theme.SecondaryBlue
@@ -251,6 +254,56 @@ fun SettingsScreen(
             }
         }
 
+        // Theme Selection Card
+        item {
+            val currentTheme by viewModel.themeMode.collectAsState()
+
+            Card(
+                colors = CardDefaults.cardColors(containerColor = SurfaceContainer),
+                shape = RoundedCornerShape(16.dp),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Box(modifier = Modifier.size(32.dp).clip(RoundedCornerShape(8.dp)).background(SurfaceContainerHigh), contentAlignment = Alignment.Center) {
+                            Icon(
+                                imageVector = if (currentTheme == AppThemeMode.LIGHT) Icons.Default.LightMode else Icons.Default.DarkMode,
+                                contentDescription = "Theme",
+                                tint = PrimaryEmerald,
+                                modifier = Modifier.size(18.dp)
+                            )
+                        }
+                        Column {
+                            Text(text = "Mode Tampilan Aplikasi", color = TextMain, fontWeight = FontWeight.Bold, fontSize = 14.sp)
+                            Text(text = "Pilih tema terang atau gelap untuk kenyamanan visual", color = TextMuted, fontSize = 11.sp)
+                        }
+                    }
+
+                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        AppThemeMode.values().forEach { mode ->
+                            val isSelected = currentTheme == mode
+                            Box(
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .clip(RoundedCornerShape(8.dp))
+                                    .background(if (isSelected) PrimaryEmerald else SurfaceContainerLow)
+                                    .clickable { viewModel.setThemeMode(mode) }
+                                    .padding(vertical = 10.dp),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Text(
+                                    text = mode.label,
+                                    color = if (isSelected) Color(0xFF003824) else TextMain,
+                                    fontSize = 11.sp,
+                                    fontWeight = FontWeight.Bold
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
         // Preferences Card
         item {
             Card(
@@ -259,7 +312,7 @@ fun SettingsScreen(
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                    Text(text = "Preferensi Tampilan & Pasar", color = TextMain, fontWeight = FontWeight.Bold, fontSize = 14.sp)
+                    Text(text = "Preferensi Jam & Pasar", color = TextMain, fontWeight = FontWeight.Bold, fontSize = 14.sp)
 
                     PreferenceRow(icon = Icons.Default.Schedule, title = "Zona Jam Pasar", value = "New York (EDT) & WIB")
                     PreferenceRow(icon = Icons.Default.Sell, title = "Komisi Per Eksekusi", value = "$0.00 USD (Bebas Biaya)")

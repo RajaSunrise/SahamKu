@@ -240,12 +240,15 @@ fun StockDetailScreen(
                         }
 
                         // SVG / Canvas Candlestick representation
+                        val gridLineColor = SurfaceContainerHighest
+                        val chartBgColor = SurfaceContainerLowest
+
                         Canvas(
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .height(180.dp)
                                 .clip(RoundedCornerShape(8.dp))
-                                .background(SurfaceContainerLowest)
+                                .background(chartBgColor)
                         ) {
                             val w = size.width
                             val h = size.height
@@ -254,9 +257,9 @@ fun StockDetailScreen(
                             val gridY2 = h * 0.55f
                             val gridY3 = h * 0.8f
 
-                            drawLine(color = SurfaceContainerHighest, start = Offset(0f, gridY1), end = Offset(w, gridY1), strokeWidth = 1f)
-                            drawLine(color = SurfaceContainerHighest, start = Offset(0f, gridY2), end = Offset(w, gridY2), strokeWidth = 1f)
-                            drawLine(color = SurfaceContainerHighest, start = Offset(0f, gridY3), end = Offset(w, gridY3), strokeWidth = 1f)
+                            drawLine(color = gridLineColor, start = Offset(0f, gridY1), end = Offset(w, gridY1), strokeWidth = 1f)
+                            drawLine(color = gridLineColor, start = Offset(0f, gridY2), end = Offset(w, gridY2), strokeWidth = 1f)
+                            drawLine(color = gridLineColor, start = Offset(0f, gridY3), end = Offset(w, gridY3), strokeWidth = 1f)
 
                             val ma20Path = Path().apply {
                                 moveTo(0f, h * 0.7f)
