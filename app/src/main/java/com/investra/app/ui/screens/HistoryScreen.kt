@@ -49,6 +49,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.investra.app.data.model.TradeHistory
 import com.investra.app.ui.MainViewModel
+import com.investra.app.ui.components.StockLogoImage
 import com.investra.app.ui.theme.PrimaryContainer
 import com.investra.app.ui.theme.PrimaryEmerald
 import com.investra.app.ui.theme.SecondaryBlue
@@ -65,13 +66,35 @@ fun HistoryScreen(
     viewModel: MainViewModel,
     onBackClick: () -> Unit
 ) {
-    val tradeHistory by viewModel.tradeHistory.collectAsState()
-    var selectedRange by remember { mutableStateOf("bulan-ini") }
+    val rawTradeHistory by viewModel.tradeHistory.collectAsState()
+    val initialCapital by viewModel.initialCapital.collectAsState()
+    val marketGainers by viewModel.gainers.collectAsState()
+    var selectedRange by remember { mutableStateOf("semua") }
+
+    val tradeHistory = remember(rawTradeHistory, selectedRange) {
+        rawTradeHistory // Filters can be applied if date range metadata exists
+    }
 
     val totalRealizedPnL = tradeHistory.sumOf { it.realizedPnL }
     val winCount = tradeHistory.count { it.isWin }
+    val lossCount = tradeHistory.count { !it.isWin }
     val totalTrades = tradeHistory.size
-    val winRate = if (totalTrades > 0) (winCount.toDouble() / totalTrades) * 100 else 78.5
+    val winRate = if (totalTrades > 0) (winCount.toDouble() / totalTrades) * 100 else 0.0
+
+    val winTrades = tradeHistory.filter { it.isWin }
+    val lossTrades = tradeHistory.filter { !it.isWin }
+
+    val totalWinAmount = winTrades.sumOf { it.realizedPnL }
+    val totalLossAmount = lossTrades.sumOf { Math.abs(it.realizedPnL) }
+
+    val avgWinAmount = if (winTrades.isNotEmpty()) totalWinAmount / winTrades.size else 0.0
+    val avgWinPercent = if (winTrades.isNotEmpty()) winTrades.map { it.realizedPnLPercent }.average() else 0.0
+
+    val avgLossAmount = if (lossTrades.isNotEmpty()) totalLossAmount / lossTrades.size else 0.0
+    val avgLossPercent = if (lossTrades.isNotEmpty()) lossTrades.map { Math.abs(it.realizedPnLPercent) }.average() else 0.0
+
+    val profitFactor = if (totalLossAmount > 0) totalWinAmount / totalLossAmount else if (totalWinAmount > 0) 99.0 else 0.0
+    val returnOnCapital = if (initialCapital > 0) (totalRealizedPnL / initialCapital) * 100 else 0.0
 
     LazyColumn(
         modifier = Modifier
@@ -92,7 +115,7 @@ fun HistoryScreen(
                 }
                 Column {
                     Text(text = "Riwayat & Kinerja Trading", color = TextMain, fontWeight = FontWeight.Bold, fontSize = 16.sp)
-                    Text(text = "Jurnal evaluasi eksekusi & efisiensi modal demo", color = TextMuted, fontSize = 11.sp)
+                    Text(text = "Jurnal evaluasi real dari eksekusi transaksi Anda", color = TextMuted, fontSize = 11.sp)
                 }
             }
         }
@@ -129,8 +152,10 @@ fun HistoryScreen(
             }
         }
 
-        // Primary PnL Hero Card
+        // Primary Realized PnL Hero Card
         item {
+            val isPositivePnL = totalRealizedPnL >= 0
+
             Card(
                 colors = CardDefaults.cardColors(containerColor = SurfaceContainer),
                 shape = RoundedCornerShape(16.dp),
@@ -145,8 +170,8 @@ fun HistoryScreen(
                         Column {
                             Text(text = "TOTAL REALIZED PROFIT", color = TextMuted, fontSize = 10.sp, fontWeight = FontWeight.Bold)
                             Text(
-                                text = "+$${String.format("%,.2f", 14280.50 + totalRealizedPnL)} USD",
-                                color = PrimaryEmerald,
+                                text = "${if (isPositivePnL) "+" else ""}$${String.format("%,.2f", totalRealizedPnL)} USD",
+                                color = if (isPositivePnL) PrimaryEmerald else TertiaryContainer,
                                 fontWeight = FontWeight.Bold,
                                 fontSize = 24.sp
                             )
@@ -155,38 +180,59 @@ fun HistoryScreen(
                         Box(
                             modifier = Modifier
                                 .clip(RoundedCornerShape(16.dp))
-                                .background(PrimaryEmerald.copy(alpha = 0.15f))
+                                .background(if (isPositivePnL) PrimaryEmerald.copy(alpha = 0.15f) else TertiaryContainer.copy(alpha = 0.15f))
                                 .padding(horizontal = 10.dp, vertical = 4.dp)
                         ) {
                             Row(verticalAlignment = Alignment.CenterVertically) {
-                                Icon(imageVector = Icons.Default.TrendingUp, contentDescription = "Up", tint = PrimaryEmerald, modifier = Modifier.size(14.dp))
+                                Icon(imageVector = Icons.Default.TrendingUp, contentDescription = "Up", tint = if (isPositivePnL) PrimaryEmerald else TertiaryContainer, modifier = Modifier.size(14.dp))
                                 Spacer(modifier = Modifier.width(4.dp))
-                                Text(text = "+14.28%", color = PrimaryEmerald, fontWeight = FontWeight.Bold, fontSize = 11.sp)
+                                Text(
+                                    text = "${if (returnOnCapital >= 0) "+" else ""}${String.format("%.2f", returnOnCapital)}%",
+                                    color = if (isPositivePnL) PrimaryEmerald else TertiaryContainer,
+                                    fontWeight = FontWeight.Bold,
+                                    fontSize = 11.sp
+                                )
                             }
                         }
                     }
 
-                    // Distribution Mini Bars
+                    // Distribution Mini Bars dynamically rendered from real tradeHistory
                     Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                            Text(text = "Distribusi Kemenangan (14 Transaksi)", color = TextMuted, fontSize = 10.sp)
-                            Text(text = "85.7% Skala Profit", color = PrimaryEmerald, fontSize = 10.sp, fontWeight = FontWeight.Bold)
+                            Text(text = "Distribusi Transaksi ($totalTrades Transaksi Real)", color = TextMuted, fontSize = 10.sp)
+                            Text(text = "${String.format("%.1f", winRate)}% Win Rate", color = if (winRate >= 50) PrimaryEmerald else TertiaryContainer, fontSize = 10.sp, fontWeight = FontWeight.Bold)
                         }
-                        Row(
-                            modifier = Modifier.fillMaxWidth().height(24.dp),
-                            horizontalArrangement = Arrangement.spacedBy(4.dp),
-                            verticalAlignment = Alignment.Bottom
-                        ) {
-                            val barHeights = listOf(0.6f, 0.75f, 0.3f, 0.9f, 0.4f, 0.65f, 0.8f, 0.2f, 0.5f, 0.95f, 0.7f, 0.25f, 0.85f, 1.0f)
-                            barHeights.forEachIndexed { idx, pct ->
-                                val isWinBar = idx % 3 != 2
-                                Box(
-                                    modifier = Modifier
-                                        .weight(1f)
-                                        .height((24 * pct).dp)
-                                        .clip(RoundedCornerShape(topStart = 2.dp, topEnd = 2.dp))
-                                        .background(if (isWinBar) PrimaryEmerald else TertiaryContainer)
-                                )
+
+                        if (tradeHistory.isNotEmpty()) {
+                            Row(
+                                modifier = Modifier.fillMaxWidth().height(28.dp),
+                                horizontalArrangement = Arrangement.spacedBy(4.dp),
+                                verticalAlignment = Alignment.Bottom
+                            ) {
+                                val recentTrades = tradeHistory.take(15).reversed()
+                                val maxPnl = recentTrades.maxOfOrNull { Math.abs(it.realizedPnL) }?.coerceAtLeast(1.0) ?: 1.0
+
+                                recentTrades.forEach { tr ->
+                                    val pct = (Math.abs(tr.realizedPnL) / maxPnl).coerceIn(0.2, 1.0).toFloat()
+                                    Box(
+                                        modifier = Modifier
+                                            .weight(1f)
+                                            .height((28 * pct).dp)
+                                            .clip(RoundedCornerShape(topStart = 2.dp, topEnd = 2.dp))
+                                            .background(if (tr.isWin) PrimaryEmerald else TertiaryContainer)
+                                    )
+                                }
+                            }
+                        } else {
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .height(24.dp)
+                                    .clip(RoundedCornerShape(6.dp))
+                                    .background(SurfaceContainerHigh),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Text(text = "Belum ada transaksi tertutup", color = TextMuted, fontSize = 10.sp)
                             }
                         }
                     }
@@ -197,18 +243,40 @@ fun HistoryScreen(
         // Key Analytics Metrics Grid
         item {
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                AnalyticsCard(title = "WIN RATE", value = "${String.format("%.1f", winRate)}%", sub = "11 Menang / 3 Kalah", modifier = Modifier.weight(1f))
-                AnalyticsCard(title = "PROFIT FACTOR", value = "3.40", sub = "Rasio Laba / Rugi Optimal", modifier = Modifier.weight(1f))
+                AnalyticsCard(
+                    title = "WIN RATE",
+                    value = "${String.format("%.1f", winRate)}%",
+                    sub = "$winCount Menang / $lossCount Kalah ($totalTrades Total)",
+                    modifier = Modifier.weight(1f)
+                )
+                AnalyticsCard(
+                    title = "PROFIT FACTOR",
+                    value = if (profitFactor >= 99.0) "MAX" else String.format("%.2f", profitFactor),
+                    sub = if (profitFactor >= 1.5) "Sangat Efisien" else if (profitFactor >= 1.0) "Netral" else "Perlu Evaluasi",
+                    modifier = Modifier.weight(1f)
+                )
             }
         }
         item {
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                AnalyticsCard(title = "RATA-RATA UNTUNG", value = "+$1,420.00", sub = "+9.2% per trade", isPositive = true, modifier = Modifier.weight(1f))
-                AnalyticsCard(title = "RATA-RATA RUGI", value = "-$420.00", sub = "-3.1% per trade", isPositive = false, modifier = Modifier.weight(1f))
+                AnalyticsCard(
+                    title = "RATA-RATA UNTUNG",
+                    value = "+$${String.format("%,.2f", avgWinAmount)}",
+                    sub = "+${String.format("%.1f", avgWinPercent)}% per trade",
+                    isPositive = true,
+                    modifier = Modifier.weight(1f)
+                )
+                AnalyticsCard(
+                    title = "RATA-RATA RUGI",
+                    value = "-$${String.format("%,.2f", avgLossAmount)}",
+                    sub = "-${String.format("%.1f", avgLossPercent)}% per trade",
+                    isPositive = false,
+                    modifier = Modifier.weight(1f)
+                )
             }
         }
 
-        // AI Cognitive Learning Evaluation Banner
+        // AI Cognitive Learning Real Insight Banner
         item {
             Card(
                 colors = CardDefaults.cardColors(containerColor = SurfaceContainerHigh),
@@ -227,9 +295,15 @@ fun HistoryScreen(
                         Icon(imageVector = Icons.Default.SmartToy, contentDescription = "AI", tint = PrimaryEmerald, modifier = Modifier.size(18.dp))
                     }
                     Column {
-                        Text(text = "EVALUASI PEMBELAJARAN AI", color = PrimaryEmerald, fontSize = 10.sp, fontWeight = FontWeight.Bold)
+                        Text(text = "EVALUASI KINERJA NYATA", color = PrimaryEmerald, fontSize = 10.sp, fontWeight = FontWeight.Bold)
                         Text(
-                            text = "“Disiplin Stop Loss berhasil menghemat modal virtual sebesar $1,200 dari potensi penurunan lanjutan di ticker AMD.”",
+                            text = if (totalTrades == 0) {
+                                "“Belum ada transaksi terealisasi. Lakukan simulasi beli & jual saham untuk membentuk jurnal & analytics otomatis.”"
+                            } else if (winRate >= 60.0) {
+                                "“Kinerja trading Anda solid dengan Win Rate ${String.format("%.1f", winRate)}%. Pertahankan eksekusi Risk-Reward yang disiplin.”"
+                            } else {
+                                "“Anda telah menyelesaikan $totalTrades transaksi ($winCount untung, $lossCount rugi). Perhatikan manajemen risiko untuk meningkatkan rasio profit.”"
+                            },
                             color = TextMain,
                             fontSize = 11.sp,
                             lineHeight = 15.sp,
@@ -247,17 +321,42 @@ fun HistoryScreen(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Text(text = "Riwayat Eksekusi Tertutup", color = TextMain, fontWeight = FontWeight.Bold, fontSize = 15.sp)
+                Text(text = "Riwayat Eksekusi Real ($totalTrades)", color = TextMain, fontWeight = FontWeight.Bold, fontSize = 15.sp)
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text(text = "Ekspor Log", color = PrimaryEmerald, fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                    Text(text = "Log Transaksi", color = PrimaryEmerald, fontSize = 11.sp, fontWeight = FontWeight.Bold)
                     Spacer(modifier = Modifier.width(2.dp))
                     Icon(imageVector = Icons.Default.Download, contentDescription = "Export", tint = PrimaryEmerald, modifier = Modifier.size(14.dp))
                 }
             }
         }
 
-        items(tradeHistory) { trade ->
-            TradeHistoryCardItem(trade = trade)
+        if (tradeHistory.isEmpty()) {
+            item {
+                Card(
+                    colors = CardDefaults.cardColors(containerColor = SurfaceContainer),
+                    shape = RoundedCornerShape(12.dp),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Column(
+                        modifier = Modifier.padding(24.dp).fillMaxWidth(),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Text(text = "Belum Ada Riwayat Transaksi", color = TextMain, fontWeight = FontWeight.Bold, fontSize = 15.sp)
+                        Text(
+                            text = "Silakan lakukan jual beli saham demo di menu Pasar untuk mencatat jurnal riwayat secara otomatis.",
+                            color = TextMuted,
+                            fontSize = 12.sp,
+                            modifier = Modifier.padding(horizontal = 8.dp)
+                        )
+                    }
+                }
+            }
+        } else {
+            items(tradeHistory) { trade ->
+                val matchingStock = marketGainers.find { it.ticker == trade.ticker }
+                TradeHistoryCardItem(trade = trade, logoUrl = matchingStock?.logoUrl)
+            }
         }
 
         item { Spacer(modifier = Modifier.height(16.dp)) }
@@ -280,7 +379,7 @@ fun AnalyticsCard(title: String, value: String, sub: String, isPositive: Boolean
 }
 
 @Composable
-fun TradeHistoryCardItem(trade: TradeHistory) {
+fun TradeHistoryCardItem(trade: TradeHistory, logoUrl: String? = null) {
     Card(
         colors = CardDefaults.cardColors(containerColor = SurfaceContainer),
         shape = RoundedCornerShape(12.dp),
@@ -293,19 +392,14 @@ fun TradeHistoryCardItem(trade: TradeHistory) {
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Box(
-                        modifier = Modifier.size(36.dp).clip(RoundedCornerShape(8.dp)).background(SurfaceContainerHigh),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Text(text = trade.ticker.take(1), color = TextMain, fontWeight = FontWeight.Bold, fontSize = 14.sp)
-                    }
+                    StockLogoImage(ticker = trade.ticker, logoUrl = logoUrl, size = 36.dp, fontSize = 14)
                     Column {
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Text(text = trade.ticker, color = TextMain, fontWeight = FontWeight.Bold, fontSize = 14.sp)
                             Spacer(modifier = Modifier.width(4.dp))
                             Text(text = trade.exchange, color = TextMuted, fontSize = 9.sp)
                         }
-                        Text(text = trade.reasonText, color = TextMuted, fontSize = 10.sp)
+                        Text(text = "${trade.shares} lembar • ${trade.reasonText}", color = TextMuted, fontSize = 10.sp)
                     }
                 }
 

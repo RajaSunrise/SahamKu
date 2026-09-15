@@ -45,6 +45,7 @@ import com.investra.app.ui.screens.PasarScreen
 import com.investra.app.ui.screens.PortofolioScreen
 import com.investra.app.ui.screens.RekomendasiScreen
 import com.investra.app.ui.screens.ScreenerScreen
+import com.investra.app.ui.screens.SearchScreen
 import com.investra.app.ui.screens.SettingsScreen
 import com.investra.app.ui.screens.SplashScreen
 import com.investra.app.ui.screens.StockDetailScreen
@@ -75,7 +76,7 @@ fun MainApp(viewModel: MainViewModel) {
 
     var showSplash by remember { mutableStateOf(true) }
     var currentTab by remember { mutableStateOf(NavTab.PASAR) }
-    var activeSubScreen by remember { mutableStateOf<String?>(null) } // "detail", "history", "screener", "calculator"
+    var activeSubScreen by remember { mutableStateOf<String?>(null) } // "detail", "history", "screener", "calculator", "search"
     var selectedStockDetail by remember { mutableStateOf<Stock?>(null) }
 
     // Dialog states
@@ -116,6 +117,7 @@ fun MainApp(viewModel: MainViewModel) {
                     "history" -> "Riwayat Kinerja"
                     "screener" -> "Screener"
                     "calculator" -> "Kalkulator"
+                    "search" -> "Pencarian Saham"
                     else -> currentTab.label
                 },
                 virtualBalanceFormatted = "$${String.format("%,.2f", virtualCash)}"
@@ -175,6 +177,16 @@ fun MainApp(viewModel: MainViewModel) {
                         }
                     )
                 }
+                activeSubScreen == "search" -> {
+                    SearchScreen(
+                        viewModel = viewModel,
+                        onBackClick = { activeSubScreen = null },
+                        onStockClick = { stock ->
+                            selectedStockDetail = stock
+                            activeSubScreen = "detail"
+                        }
+                    )
+                }
                 else -> {
                     when (currentTab) {
                         NavTab.PASAR -> {
@@ -184,7 +196,8 @@ fun MainApp(viewModel: MainViewModel) {
                                     selectedStockDetail = stock
                                     activeSubScreen = "detail"
                                 },
-                                onQuickBuyClick = { buyStockTarget = it }
+                                onQuickBuyClick = { buyStockTarget = it },
+                                onSearchClick = { activeSubScreen = "search" }
                             )
                         }
                         NavTab.REKOMENDASI -> {
