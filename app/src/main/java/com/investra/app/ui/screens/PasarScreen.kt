@@ -417,6 +417,44 @@ fun PasarScreen(
 }
 
 @Composable
+fun IndexCard(name: String, value: String, changePct: String, modifier: Modifier = Modifier) {
+    Card(
+        colors = CardDefaults.cardColors(containerColor = SurfaceContainer),
+        shape = RoundedCornerShape(10.dp),
+        modifier = modifier
+    ) {
+        Column(
+            modifier = Modifier.padding(8.dp),
+            verticalArrangement = Arrangement.spacedBy(4.dp)
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(text = name, color = TextMuted, fontSize = 10.sp)
+                Icon(
+                    imageVector = Icons.Default.ArrowDropUp,
+                    contentDescription = "Up",
+                    tint = PrimaryEmerald,
+                    modifier = Modifier.size(14.dp)
+                )
+            }
+            Text(text = value, color = TextMain, fontWeight = FontWeight.Bold, fontSize = 13.sp)
+            Text(text = changePct, color = PrimaryEmerald, fontWeight = FontWeight.SemiBold, fontSize = 10.sp)
+            Canvas(modifier = Modifier.fillMaxWidth().height(16.dp)) {
+                val path = Path().apply {
+                    moveTo(0f, size.height * 0.8f)
+                    quadraticBezierTo(size.width * 0.3f, size.height * 0.6f, size.width * 0.6f, size.height * 0.3f)
+                    lineTo(size.width, size.height * 0.1f)
+                }
+                drawPath(path = path, color = PrimaryEmerald, style = Stroke(width = 2.dp.toPx()))
+            }
+        }
+    }
+}
+
+@Composable
 fun StockCardItem(
     stock: Stock,
     onStockClick: () -> Unit,
