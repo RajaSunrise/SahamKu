@@ -154,7 +154,7 @@ fun RekomendasiScreen(
                 }
 
                 LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    items(timeframes) { tf ->
+                    items(timeframes, key = { it }) { tf ->
                         val isSelected = selectedTf == tf
                         Box(
                             modifier = Modifier
@@ -350,7 +350,7 @@ fun RekomendasiScreen(
         }
 
         // Secondary Signal List Items
-        items(secondaryStocks) { stock ->
+        items(secondaryStocks, key = { it.ticker }) { stock ->
             Card(
                 colors = CardDefaults.cardColors(containerColor = SurfaceContainerLow),
                 shape = RoundedCornerShape(14.dp),

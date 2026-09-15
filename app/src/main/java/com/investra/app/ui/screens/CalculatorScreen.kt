@@ -126,7 +126,7 @@ fun CalculatorScreen(
         item {
             LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 val stockList = listOf("NVDA" to 142.50, "AAPL" to 228.20, "TSLA" to 254.30)
-                items(stockList) { (t, p) ->
+                items(stockList, key = { it.first }) { (t, p) ->
                     val isSelected = selectedTicker == t
                     Box(
                         modifier = Modifier

@@ -242,7 +242,7 @@ fun PasarScreen(
                         "active" to "Most Active",
                         "unusual" to "Unusual Volume"
                     )
-                    items(tabs) { (id, label) ->
+                    items(tabs, key = { it.first }) { (id, label) ->
                         val isSelected = selectedTab == id
                         Box(
                             modifier = Modifier
@@ -264,7 +264,7 @@ fun PasarScreen(
         }
 
         // Stock List Cards
-        items(displayStocks) { stock ->
+        items(displayStocks, key = { it.ticker }) { stock ->
             StockCardItem(
                 stock = stock,
                 onStockClick = { onStockClick(stock) },

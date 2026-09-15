@@ -216,7 +216,7 @@ fun PortofolioScreen(
 
         // Active Positions / Watchlist Listing
         if (selectedTab == "open") {
-            items(positions) { pos ->
+            items(positions, key = { it.ticker }) { pos ->
                 PositionCardItem(
                     position = pos,
                     onStockClick = { onStockClick(pos.ticker) },
@@ -224,7 +224,7 @@ fun PortofolioScreen(
                 )
             }
         } else {
-            items(watchlist.toList()) { ticker ->
+            items(watchlist.toList(), key = { it }) { ticker ->
                 val matchedStock = allMarketStocks[ticker]
                 Card(
                     colors = CardDefaults.cardColors(containerColor = SurfaceContainer),

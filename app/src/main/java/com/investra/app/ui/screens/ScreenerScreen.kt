@@ -144,7 +144,7 @@ fun ScreenerScreen(
                 }
 
                 LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    items(presets) { p ->
+                    items(presets, key = { it }) { p ->
                         val isSelected = filterState.preset == p
                         Box(
                             modifier = Modifier
@@ -217,7 +217,7 @@ fun ScreenerScreen(
             }
         }
 
-        items(screenResults) { stock ->
+        items(screenResults, key = { it.ticker }) { stock ->
             Card(
                 colors = CardDefaults.cardColors(containerColor = SurfaceContainer),
                 shape = RoundedCornerShape(14.dp),
