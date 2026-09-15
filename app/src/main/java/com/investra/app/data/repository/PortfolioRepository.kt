@@ -65,9 +65,9 @@ class PortfolioRepository(private val dbHelper: DatabaseHelper? = null) {
         }
     }
 
-    fun buyStock(stock: Stock, shares: Int, orderType: String = "Market Order", stopLoss: Double? = null, takeProfit: Double? = null): Boolean {
+    fun buyStock(stock: Stock, shares: Double, orderType: String = "Market Order", stopLoss: Double? = null, takeProfit: Double? = null): Boolean {
         val cost = stock.price * shares
-        if (_virtualCash.value >= cost && shares > 0) {
+        if (_virtualCash.value >= cost && shares > 0.0) {
             _virtualCash.value -= cost
             dbHelper?.updateVirtualCash(_virtualCash.value)
 
@@ -84,7 +84,8 @@ class PortfolioRepository(private val dbHelper: DatabaseHelper? = null) {
                     avgBuyPrice = avgPrice,
                     currentPrice = stock.price,
                     stopLoss = stopLoss ?: existing.stopLoss,
-                    takeProfit = takeProfit ?: existing.takeProfit
+                    takeProfit = takeProfit ?: existing.takeProfit,
+                    logoUrl = stock.logoUrl ?: existing.logoUrl
                 )
                 currentList[existingIndex] = updatedPos
             } else {
@@ -96,7 +97,8 @@ class PortfolioRepository(private val dbHelper: DatabaseHelper? = null) {
                     avgBuyPrice = stock.price,
                     currentPrice = stock.price,
                     stopLoss = stopLoss,
-                    takeProfit = takeProfit
+                    takeProfit = takeProfit,
+                    logoUrl = stock.logoUrl
                 )
                 currentList.add(updatedPos)
             }
@@ -107,7 +109,7 @@ class PortfolioRepository(private val dbHelper: DatabaseHelper? = null) {
         return false
     }
 
-    fun sellStock(ticker: String, sharesToSell: Int): Boolean {
+    fun sellStock(ticker: String, sharesToSell: Double): Boolean {
         val currentList = _positions.value.toMutableList()
         val index = currentList.indexOfFirst { it.ticker == ticker }
         if (index >= 0) {
@@ -121,7 +123,7 @@ class PortfolioRepository(private val dbHelper: DatabaseHelper? = null) {
             _virtualCash.value += grossProceeds
             dbHelper?.updateVirtualCash(_virtualCash.value)
 
-            if (actualSellShares >= position.shares) {
+            if (actualSellShares >= position.shares - 0.0001) {
                 currentList.removeAt(index)
                 dbHelper?.deletePosition(ticker)
             } else {
@@ -145,7 +147,8 @@ class PortfolioRepository(private val dbHelper: DatabaseHelper? = null) {
                 realizedPnLPercent = pnlPct,
                 dateText = dateStr,
                 reasonText = if (pnl >= 0) "Jual Realisasi Profit Demo" else "Jual Stop Loss Demo",
-                isWin = pnl >= 0
+                isWin = pnl >= 0,
+                logoUrl = position.logoUrl
             )
             _tradeHistory.value = listOf(history) + _tradeHistory.value
             dbHelper?.addTradeHistory(history)

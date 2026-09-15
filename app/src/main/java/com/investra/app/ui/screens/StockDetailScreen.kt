@@ -83,10 +83,60 @@ fun StockDetailScreen(
     onBuyClick: () -> Unit,
     onCalculatorClick: () -> Unit
 ) {
+    val liveStockState by viewModel.selectedStock.collectAsState()
+    val activeStock = liveStockState ?: stock
+
     var selectedTf by remember { mutableStateOf("1D") }
     val timeframes = listOf("4H", "1D", "1W", "1M", "1Y")
     val watchlistSet by viewModel.watchlist.collectAsState()
-    val isStarred = watchlistSet.contains(stock.ticker)
+    val isStarred = watchlistSet.contains(activeStock.ticker)
+
+    // Calculate dynamic real technical analysis consensus breakdown (21 technical indicators)
+    val consensusBreakdown = remember(activeStock.ticker, activeStock.price, activeStock.rsi, activeStock.recommendationScore) {
+        var buy = 0
+        var neutral = 0
+        var sell = 0
+
+        // 1. Recommendation Score (5 weight)
+        if (activeStock.recommendationScore >= 0.2) {
+            buy += 5
+        } else if (activeStock.recommendationScore >= 0.0) {
+            buy += 3
+            neutral += 2
+        } else if (activeStock.recommendationScore >= -0.2) {
+            sell += 2
+            neutral += 3
+        } else {
+            sell += 5
+        }
+
+        // 2. RSI (14) Oscillator (4 weight)
+        when {
+            activeStock.rsi in 45.0..55.0 -> neutral += 4
+            activeStock.rsi > 55.0 -> buy += 4
+            else -> sell += 4
+        }
+
+        // 3. MACD Momentum (4 weight)
+        if (activeStock.macdStatus.contains("Bullish", ignoreCase = true) || activeStock.macdStatus.contains("Golden", ignoreCase = true)) {
+            buy += 4
+        } else if (activeStock.macdStatus.contains("Bearish", ignoreCase = true) || activeStock.macdStatus.contains("Oversold", ignoreCase = true)) {
+            sell += 4
+        } else {
+            neutral += 4
+        }
+
+        // 4. EMA 20 Trend (4 weight)
+        if (activeStock.price >= activeStock.ema20) buy += 4 else sell += 4
+
+        // 5. EMA 50 Long-term Trend (4 weight)
+        if (activeStock.price >= activeStock.ema50) buy += 4 else sell += 4
+
+        Triple(buy, neutral, sell)
+    }
+
+    val (buyCount, neutralCount, sellCount) = consensusBreakdown
+    val totalIndicators = (buyCount + neutralCount + sellCount).coerceAtLeast(1)
 
     Box(modifier = Modifier.fillMaxSize()) {
         LazyColumn(
@@ -116,13 +166,13 @@ fun StockDetailScreen(
 
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         IconButton(
-                            onClick = { viewModel.showToast("Notifikasi alert diset untuk ${stock.ticker}") },
+                            onClick = { viewModel.showToast("Notifikasi alert diset untuk ${activeStock.ticker}") },
                             modifier = Modifier.size(36.dp).clip(CircleShape).background(SurfaceContainerHigh)
                         ) {
                             Icon(imageVector = Icons.Default.Notifications, contentDescription = "Alert", tint = TextMuted, modifier = Modifier.size(18.dp))
                         }
                         IconButton(
-                            onClick = { viewModel.toggleWatchlist(stock.ticker) },
+                            onClick = { viewModel.toggleWatchlist(activeStock.ticker) },
                             modifier = Modifier.size(36.dp).clip(CircleShape).background(SurfaceContainerHigh)
                         ) {
                             Icon(imageVector = Icons.Default.Star, contentDescription = "Star", tint = if (isStarred) PrimaryEmerald else TextMuted, modifier = Modifier.size(18.dp))
@@ -140,28 +190,29 @@ fun StockDetailScreen(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                            StockLogoImage(ticker = stock.ticker, logoUrl = stock.logoUrl, size = 40.dp, fontSize = 18)
+                            StockLogoImage(ticker = activeStock.ticker, logoUrl = activeStock.logoUrl, size = 40.dp, fontSize = 18)
                             Column {
                                 Row(verticalAlignment = Alignment.CenterVertically) {
-                                    Text(text = stock.ticker, color = TextMain, fontWeight = FontWeight.Bold, fontSize = 18.sp)
+                                    Text(text = activeStock.ticker, color = TextMain, fontWeight = FontWeight.Bold, fontSize = 18.sp)
                                     Spacer(modifier = Modifier.width(6.dp))
                                     Box(
                                         modifier = Modifier.clip(RoundedCornerShape(12.dp)).background(SurfaceContainerHigh).padding(horizontal = 6.dp, vertical = 2.dp)
                                     ) {
-                                        Text(text = stock.exchange, color = TextMuted, fontSize = 10.sp)
+                                        Text(text = activeStock.exchange, color = TextMuted, fontSize = 10.sp)
                                     }
                                 }
-                                Text(text = stock.name, color = TextMuted, fontSize = 12.sp)
+                                Text(text = activeStock.name, color = TextMuted, fontSize = 12.sp)
                             }
                         }
 
+                        val isPositive = activeStock.changePercent >= 0
                         Box(
-                            modifier = Modifier.clip(RoundedCornerShape(16.dp)).background(PrimaryEmerald.copy(alpha = 0.15f)).padding(horizontal = 10.dp, vertical = 4.dp)
+                            modifier = Modifier.clip(RoundedCornerShape(16.dp)).background(if (isPositive) PrimaryEmerald.copy(alpha = 0.15f) else TertiaryContainer.copy(alpha = 0.15f)).padding(horizontal = 10.dp, vertical = 4.dp)
                         ) {
                             Row(verticalAlignment = Alignment.CenterVertically) {
-                                Icon(imageVector = Icons.Default.TrendingUp, contentDescription = "Up", tint = PrimaryEmerald, modifier = Modifier.size(14.dp))
+                                Icon(imageVector = Icons.Default.TrendingUp, contentDescription = "Up", tint = if (isPositive) PrimaryEmerald else TertiaryContainer, modifier = Modifier.size(14.dp))
                                 Spacer(modifier = Modifier.width(4.dp))
-                                Text(text = "${if (stock.changePercent >= 0) "+" else ""}${String.format("%.2f", stock.changePercent)}%", color = PrimaryEmerald, fontWeight = FontWeight.Bold, fontSize = 12.sp)
+                                Text(text = "${if (isPositive) "+" else ""}${String.format("%.2f", activeStock.changePercent)}%", color = if (isPositive) PrimaryEmerald else TertiaryContainer, fontWeight = FontWeight.Bold, fontSize = 12.sp)
                             }
                         }
                     }
@@ -172,7 +223,7 @@ fun StockDetailScreen(
                         verticalAlignment = Alignment.Bottom
                     ) {
                         Row(verticalAlignment = Alignment.Bottom) {
-                            Text(text = "$${String.format("%.2f", stock.price)}", color = TextMain, fontWeight = FontWeight.Bold, fontSize = 28.sp)
+                            Text(text = "$${String.format("%.2f", activeStock.price)}", color = TextMain, fontWeight = FontWeight.Bold, fontSize = 28.sp)
                             Spacer(modifier = Modifier.width(6.dp))
                             Text(text = "USD", color = TextMuted, fontSize = 12.sp, modifier = Modifier.padding(bottom = 4.dp))
                         }
@@ -182,8 +233,8 @@ fun StockDetailScreen(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.SpaceBetween
                     ) {
-                        Text(text = "Volume: ${stock.volumeFormatted}", color = TextMuted, fontSize = 11.sp)
-                        Text(text = "Rentang Hari: $${String.format("%.2f", stock.price * 0.98)} - $${String.format("%.2f", stock.price * 1.02)}", color = TextMuted, fontSize = 11.sp)
+                        Text(text = "Volume: ${activeStock.volumeFormatted}", color = TextMuted, fontSize = 11.sp)
+                        Text(text = "Rentang Hari: $${String.format("%.2f", activeStock.price * 0.98)} - $${String.format("%.2f", activeStock.price * 1.02)}", color = TextMuted, fontSize = 11.sp)
                     }
                 }
             }
@@ -226,8 +277,8 @@ fun StockDetailScreen(
             // Interactive Candlestick Chart Module Canvas
             item {
                 // Generate timeframe-aware candle dataset based on current stock price
-                val candleList = remember(stock.ticker, stock.price, selectedTf) {
-                    val basePrice = stock.price
+                val candleList = remember(activeStock.ticker, activeStock.price, selectedTf) {
+                    val basePrice = activeStock.price
                     val count = 12
                     val tfMultiplier = when (selectedTf) {
                         "4H" -> 0.008
@@ -247,7 +298,7 @@ fun StockDetailScreen(
                         val close = Math.max(1.0, open + change)
                         val high = Math.max(open, close) + Math.abs(change) * 0.5
                         val low = Math.max(0.5, Math.min(open, close) - Math.abs(change) * 0.4)
-                        val volume = stock.volume * (0.6 + (i % 5) * 0.15)
+                        val volume = activeStock.volume * (0.6 + (i % 5) * 0.15)
                         val label = "$selectedTf #${i + 1}"
                         list.add(StockCandlePoint(open, high, low, close, volume, label))
                         prevClose = close
@@ -259,9 +310,9 @@ fun StockDetailScreen(
                 var selectedCandleIndex by remember { mutableStateOf<Int?>(null) }
 
                 val highlightedCandle = selectedCandleIndex?.let { candleList.getOrNull(it) } ?: candleList.lastOrNull()
-                val activePrice = highlightedCandle?.close ?: stock.price
-                val priceDiff = if (candleList.isNotEmpty()) activePrice - candleList.first().open else stock.change
-                val priceDiffPct = if (candleList.isNotEmpty() && candleList.first().open > 0) (priceDiff / candleList.first().open) * 100 else stock.changePercent
+                val activePrice = highlightedCandle?.close ?: activeStock.price
+                val priceDiff = if (candleList.isNotEmpty()) activePrice - candleList.first().open else activeStock.change
+                val priceDiffPct = if (candleList.isNotEmpty() && candleList.first().open > 0) (priceDiff / candleList.first().open) * 100 else activeStock.changePercent
 
                 Card(
                     colors = CardDefaults.cardColors(containerColor = SurfaceContainerLow),
@@ -275,8 +326,8 @@ fun StockDetailScreen(
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                                Text(text = "• EMA20: $${String.format("%.2f", stock.ema20)}", color = PrimaryEmerald, fontSize = 11.sp, fontWeight = FontWeight.Bold)
-                                Text(text = "• EMA50: $${String.format("%.2f", stock.ema50)}", color = SecondaryBlue, fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                                Text(text = "• EMA20: $${String.format("%.2f", activeStock.ema20)}", color = PrimaryEmerald, fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                                Text(text = "• EMA50: $${String.format("%.2f", activeStock.ema50)}", color = SecondaryBlue, fontSize = 11.sp, fontWeight = FontWeight.Bold)
                             }
                             Text(
                                 text = if (selectedCandleIndex != null) "Interactive Crosshair" else "Live Market ($selectedTf)",
@@ -317,8 +368,8 @@ fun StockDetailScreen(
                         val gridLineColor = SurfaceContainerHighest
                         val chartBgColor = SurfaceContainerLowest
 
-                        val minPrice = (candleList.minOfOrNull { it.low } ?: (stock.price * 0.9)).toDouble()
-                        val maxPrice = (candleList.maxOfOrNull { it.high } ?: (stock.price * 1.1)).toDouble()
+                        val minPrice = (candleList.minOfOrNull { it.low } ?: (activeStock.price * 0.9)).toDouble()
+                        val maxPrice = (candleList.maxOfOrNull { it.high } ?: (activeStock.price * 1.1)).toDouble()
                         val priceRange = if (maxPrice - minPrice > 0) maxPrice - minPrice else 1.0
 
                         Canvas(
@@ -502,7 +553,7 @@ fun StockDetailScreen(
                         ) {
                             Column {
                                 Text(text = "KONSENSUS TEKNIKAL AI", color = TextMuted, fontSize = 10.sp, fontWeight = FontWeight.Bold)
-                                Text(text = stock.recommendationText, color = TextMain, fontWeight = FontWeight.Bold, fontSize = 20.sp)
+                                Text(text = activeStock.recommendationText, color = TextMain, fontWeight = FontWeight.Bold, fontSize = 20.sp)
                                 Text(text = "Dihitung dari TradingView scanner", color = TextMuted, fontSize = 11.sp)
                             }
                             Box(
@@ -514,30 +565,34 @@ fun StockDetailScreen(
                                 Row(verticalAlignment = Alignment.CenterVertically) {
                                     Icon(imageVector = Icons.Default.Bolt, contentDescription = "Score", tint = PrimaryEmerald, modifier = Modifier.size(16.dp))
                                     Spacer(modifier = Modifier.width(4.dp))
-                                    Text(text = "${(stock.recommendationScore * 100).toInt()}%", color = PrimaryEmerald, fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                                    Text(text = "${(activeStock.recommendationScore * 100).toInt()}%", color = PrimaryEmerald, fontWeight = FontWeight.Bold, fontSize = 16.sp)
                                 }
                             }
                         }
 
-                        // Ratio Bar
+                        // Ratio Bar with Real Dynamic Indicator Consensus Counts
+                        val buyWeight = buyCount.toFloat() / totalIndicators
+                        val neutralWeight = neutralCount.toFloat() / totalIndicators
+                        val sellWeight = sellCount.toFloat() / totalIndicators
+
                         Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                                Text(text = "16 Bullish", color = PrimaryEmerald, fontSize = 10.sp, fontWeight = FontWeight.Bold)
-                                Text(text = "4 Netral", color = SecondaryBlue, fontSize = 10.sp, fontWeight = FontWeight.Bold)
-                                Text(text = "1 Bearish", color = TertiaryContainer, fontSize = 10.sp, fontWeight = FontWeight.Bold)
+                                Text(text = "$buyCount Beli", color = PrimaryEmerald, fontSize = 10.sp, fontWeight = FontWeight.Bold)
+                                Text(text = "$neutralCount Netral", color = SecondaryBlue, fontSize = 10.sp, fontWeight = FontWeight.Bold)
+                                Text(text = "$sellCount Jual", color = TertiaryContainer, fontSize = 10.sp, fontWeight = FontWeight.Bold)
                             }
                             Row(modifier = Modifier.fillMaxWidth().height(8.dp).clip(RoundedCornerShape(4.dp)).background(SurfaceContainerHighest)) {
-                                Box(modifier = Modifier.weight(0.76f).fillMaxWidth().background(PrimaryEmerald))
-                                Box(modifier = Modifier.weight(0.19f).fillMaxWidth().background(SecondaryBlue))
-                                Box(modifier = Modifier.weight(0.05f).fillMaxWidth().background(TertiaryContainer))
+                                if (buyWeight > 0f) Box(modifier = Modifier.weight(buyWeight).fillMaxWidth().background(PrimaryEmerald))
+                                if (neutralWeight > 0f) Box(modifier = Modifier.weight(neutralWeight).fillMaxWidth().background(SecondaryBlue))
+                                if (sellWeight > 0f) Box(modifier = Modifier.weight(sellWeight).fillMaxWidth().background(TertiaryContainer))
                             }
                         }
 
                         // Deep Dive Indicators
                         Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                            IndicatorDetailRow(icon = Icons.Default.Speed, title = "RSI (14)", value = "${String.format("%.1f", stock.rsi)}", desc = "Status: Akumulasi Teknikal")
-                            IndicatorDetailRow(icon = Icons.Default.CallSplit, title = "MACD (12, 26, 9)", value = stock.macdStatus, desc = "Analisis momentum tren harian")
-                            IndicatorDetailRow(icon = Icons.Default.StackedLineChart, title = "EMA 20 & EMA 50", value = "EMA20: $${String.format("%.2f", stock.ema20)}", desc = "Golden Cross EMA 20/50 Valid")
+                            IndicatorDetailRow(icon = Icons.Default.Speed, title = "RSI (14)", value = "${String.format("%.1f", activeStock.rsi)}", desc = "Status: Akumulasi Teknikal")
+                            IndicatorDetailRow(icon = Icons.Default.CallSplit, title = "MACD (12, 26, 9)", value = activeStock.macdStatus, desc = "Analisis momentum tren harian")
+                            IndicatorDetailRow(icon = Icons.Default.StackedLineChart, title = "EMA 20 & EMA 50", value = "EMA20: $${String.format("%.2f", activeStock.ema20)}", desc = "Golden Cross EMA 20/50 Valid")
                         }
                     }
                 }
@@ -569,12 +624,12 @@ fun StockDetailScreen(
                         }
 
                         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                            LevelTile(title = "SUPPORT 1", value = "$${String.format("%.2f", stock.support1)}", sub = "Batas Support", color = TextMain, modifier = Modifier.weight(1f))
-                            LevelTile(title = "RESISTANCE 1", value = "$${String.format("%.2f", stock.resistance1)}", sub = "Batas Resistance", color = TextMain, modifier = Modifier.weight(1f))
+                            LevelTile(title = "SUPPORT 1", value = "$${String.format("%.2f", activeStock.support1)}", sub = "Batas Support", color = TextMain, modifier = Modifier.weight(1f))
+                            LevelTile(title = "RESISTANCE 1", value = "$${String.format("%.2f", activeStock.resistance1)}", sub = "Batas Resistance", color = TextMain, modifier = Modifier.weight(1f))
                         }
                         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                            LevelTile(title = "TARGET TP 1", value = "$${String.format("%.2f", stock.targetPrice1)}", sub = "+7.00% Target", color = PrimaryEmerald, modifier = Modifier.weight(1f))
-                            LevelTile(title = "TARGET TP 2", value = "$${String.format("%.2f", stock.targetPrice2)}", sub = "+12.00% Target", color = PrimaryEmerald, modifier = Modifier.weight(1f))
+                            LevelTile(title = "TARGET TP 1", value = "$${String.format("%.2f", activeStock.targetPrice1)}", sub = "+7.00% Target", color = PrimaryEmerald, modifier = Modifier.weight(1f))
+                            LevelTile(title = "TARGET TP 2", value = "$${String.format("%.2f", activeStock.targetPrice2)}", sub = "+12.00% Target", color = PrimaryEmerald, modifier = Modifier.weight(1f))
                         }
 
                         Row(
@@ -590,7 +645,7 @@ fun StockDetailScreen(
                                 Icon(imageVector = Icons.Default.Balance, contentDescription = "Balance", tint = PrimaryEmerald, modifier = Modifier.size(20.dp))
                                 Column {
                                     Text(text = "Rasio Risk / Reward (R:R)", color = TextMain, fontWeight = FontWeight.SemiBold, fontSize = 12.sp)
-                                    Text(text = "Stop Loss $${String.format("%.2f", stock.stopLossPrice)} & TP1 $${String.format("%.2f", stock.targetPrice1)}", color = TextMuted, fontSize = 10.sp)
+                                    Text(text = "Stop Loss $${String.format("%.2f", activeStock.stopLossPrice)} & TP1 $${String.format("%.2f", activeStock.targetPrice1)}", color = TextMuted, fontSize = 10.sp)
                                 }
                             }
                             Text(text = "1 : 2.69", color = PrimaryEmerald, fontWeight = FontWeight.Bold, fontSize = 15.sp)

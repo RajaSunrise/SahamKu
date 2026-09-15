@@ -141,11 +141,17 @@ fun MainApp(viewModel: MainViewModel) {
         ) {
             when {
                 activeSubScreen == "detail" && selectedStockDetail != null -> {
+                    LaunchedEffect(selectedStockDetail) {
+                        viewModel.setSelectedStock(selectedStockDetail)
+                    }
                     StockDetailScreen(
                         stock = selectedStockDetail!!,
                         viewModel = viewModel,
-                        onBackClick = { activeSubScreen = null },
-                        onBuyClick = { buyStockTarget = selectedStockDetail },
+                        onBackClick = {
+                            viewModel.setSelectedStock(null)
+                            activeSubScreen = null
+                        },
+                        onBuyClick = { buyStockTarget = viewModel.selectedStock.value ?: selectedStockDetail },
                         onCalculatorClick = { activeSubScreen = "calculator" }
                     )
                 }
@@ -170,7 +176,7 @@ fun MainApp(viewModel: MainViewModel) {
                     CalculatorScreen(
                         viewModel = viewModel,
                         onBackClick = { activeSubScreen = null },
-                        onApplyToOrder = { entryPrice, _ ->
+                        onApplyToOrder = { entryPrice, shares ->
                             val defaultStock = selectedStockDetail ?: Stock("NVDA", "NVIDIA Corporation", "NASDAQ", entryPrice, 7.32, 5.42, 14200000000.0, "14.2B")
                             buyStockTarget = defaultStock.copy(price = entryPrice)
                             activeSubScreen = null

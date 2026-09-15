@@ -68,7 +68,7 @@ import com.investra.app.ui.theme.TextMuted
 fun CalculatorScreen(
     viewModel: MainViewModel,
     onBackClick: () -> Unit,
-    onApplyToOrder: (Double, Int) -> Unit
+    onApplyToOrder: (Double, Double) -> Unit
 ) {
     val calcState by viewModel.calculatorState.collectAsState()
 
@@ -79,7 +79,7 @@ fun CalculatorScreen(
     var selectedTicker by remember { mutableStateOf(calcState.ticker) }
 
     val entry = entryText.toDoubleOrNull() ?: 142.50
-    val shares = sharesText.toIntOrNull() ?: 100
+    val shares = sharesText.toDoubleOrNull() ?: 100.0
     val target = targetText.toDoubleOrNull() ?: 162.00
     val stop = stopText.toDoubleOrNull() ?: 135.00
 

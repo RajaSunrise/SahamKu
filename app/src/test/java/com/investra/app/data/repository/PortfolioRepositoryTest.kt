@@ -21,26 +21,26 @@ class PortfolioRepositoryTest {
     fun testBuyStockSuccessful() {
         val stock = Stock("AMD", "Advanced Micro Devices", "NASDAQ", 100.0, 2.0, 2.0, 1000000.0, "1M")
         val initialCash = repository.virtualCash.value
-        val success = repository.buyStock(stock, 10)
+        val success = repository.buyStock(stock, 10.0)
 
         assertTrue(success)
         assertEquals(initialCash - 1000.0, repository.virtualCash.value, 0.01)
         assertEquals(1, repository.positions.value.size)
         assertEquals("AMD", repository.positions.value[0].ticker)
-        assertEquals(10, repository.positions.value[0].shares)
+        assertEquals(10.0, repository.positions.value[0].shares, 0.001)
     }
 
     @Test
     fun testSellStockSuccessful() {
         val stock = Stock("NVDA", "NVIDIA Corporation", "NASDAQ", 150.0, 5.0, 3.0, 10000000.0, "10M")
-        repository.buyStock(stock, 100)
+        repository.buyStock(stock, 100.0)
 
         val initialHistoryCount = repository.tradeHistory.value.size
-        val success = repository.sellStock("NVDA", 50)
+        val success = repository.sellStock("NVDA", 50.0)
 
         assertTrue(success)
         val nvdaPos = repository.positions.value.find { it.ticker == "NVDA" }
-        assertEquals(50, nvdaPos?.shares)
+        assertEquals(50.0, nvdaPos?.shares ?: 0.0, 0.001)
         assertEquals(initialHistoryCount + 1, repository.tradeHistory.value.size)
     }
 

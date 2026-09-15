@@ -75,6 +75,13 @@ fun PortofolioScreen(
     val floatingPnL = holdingsValue - totalInvestment
     val floatingPnLPercent = if (totalInvestment > 0) (floatingPnL / totalInvestment) * 100 else 0.0
 
+    val gainersList by viewModel.gainers.collectAsState()
+    val losersList by viewModel.losers.collectAsState()
+    val activeList by viewModel.activeStocks.collectAsState()
+    val allMarketStocks = remember(gainersList, losersList, activeList) {
+        (gainersList + losersList + activeList).associateBy { it.ticker }
+    }
+
     LazyColumn(
         modifier = Modifier
             .fillMaxSize()
@@ -218,6 +225,7 @@ fun PortofolioScreen(
             }
         } else {
             items(watchlist.toList()) { ticker ->
+                val matchedStock = allMarketStocks[ticker]
                 Card(
                     colors = CardDefaults.cardColors(containerColor = SurfaceContainer),
                     shape = RoundedCornerShape(12.dp),
@@ -229,10 +237,10 @@ fun PortofolioScreen(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                            StockLogoImage(ticker = ticker, size = 36.dp, fontSize = 14)
+                            StockLogoImage(ticker = ticker, logoUrl = matchedStock?.logoUrl, size = 36.dp, fontSize = 14)
                             Column {
                                 Text(text = ticker, color = TextMain, fontWeight = FontWeight.Bold, fontSize = 15.sp)
-                                Text(text = "Saham Terpilih Watchlist", color = TextMuted, fontSize = 11.sp)
+                                Text(text = matchedStock?.name ?: "Saham Terpilih Watchlist", color = TextMuted, fontSize = 11.sp)
                             }
                         }
                         Button(
@@ -258,6 +266,7 @@ fun PositionCardItem(
     onSellClick: () -> Unit
 ) {
     val isPositive = position.floatingPnL >= 0
+    val sharesText = if (position.shares % 1.0 == 0.0) "${position.shares.toInt()}" else String.format("%.2f", position.shares)
 
     Card(
         colors = CardDefaults.cardColors(containerColor = SurfaceContainer),
@@ -271,14 +280,14 @@ fun PositionCardItem(
                 verticalAlignment = Alignment.Top
             ) {
                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                    StockLogoImage(ticker = position.ticker, size = 38.dp, fontSize = 16)
+                    StockLogoImage(ticker = position.ticker, logoUrl = position.logoUrl, size = 38.dp, fontSize = 16)
                     Column {
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Text(text = position.ticker, color = TextMain, fontWeight = FontWeight.Bold, fontSize = 15.sp)
                             Spacer(modifier = Modifier.width(6.dp))
                             Text(text = position.exchange, color = TextMuted, fontSize = 10.sp)
                         }
-                        Text(text = "${position.name} • ${position.shares} Lembar", color = TextMuted, fontSize = 11.sp)
+                        Text(text = "${position.name} • $sharesText Lembar", color = TextMuted, fontSize = 11.sp)
                     }
                 }
 

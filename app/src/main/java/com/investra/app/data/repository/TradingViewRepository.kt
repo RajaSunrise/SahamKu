@@ -135,11 +135,19 @@ class TradingViewRepository {
         query: String,
         limit: Int = 20
     ): Result<List<Stock>> = withContext(Dispatchers.IO) {
-        if (query.isBlank()) {
+        val trimmedQuery = query.trim()
+        if (trimmedQuery.isBlank()) {
             return@withContext fetchStockScanner("gainers", limit)
         }
         try {
             val jsonMediaType = "application/json; charset=utf-8".toMediaType()
+
+            // Try name matching first, then description matching
+            val searchFilter = if (trimmedQuery.all { it.isLetterOrDigit() || it == '.' || it == '-' } && trimmedQuery.length <= 6) {
+                """{"left": "name", "operation": "match", "right": "${trimmedQuery.uppercase()}"}"""
+            } else {
+                """{"left": "description", "operation": "match", "right": "$trimmedQuery"}"""
+            }
 
             val requestBodyJson = """
                 {
@@ -147,11 +155,11 @@ class TradingViewRepository {
                     {"left": "type", "operation": "equal", "right": "stock"},
                     {"left": "subtype", "operation": "equal", "right": "common"},
                     {"left": "market_cap_basic", "operation": "egreater", "right": 5000000000},
-                    {"left": "exchange", "operation": "in_range", "right": ["AMEX", "NASDAQ", "NYSE"]}
+                    {"left": "exchange", "operation": "in_range", "right": ["AMEX", "NASDAQ", "NYSE"]},
+                    $searchFilter
                   ],
                   "options": {"lang": "en"},
                   "markets": ["america"],
-                  "symbols": {"query": {"types": [], "search": "${query.trim()}"}, "tickers": []},
                   "columns": [
                     "name", "close", "change", "change_abs", "volume",
                     "Recommend.All", "RSI", "MACD.macd", "MACD.signal",
@@ -173,13 +181,54 @@ class TradingViewRepository {
 
             if (response.isSuccessful && !responseBody.isNullOrBlank()) {
                 val stocks = parseTradingViewResponse(responseBody, "search")
-                Result.success(stocks)
-            } else {
-                val fallbacks = getFallbackStocks("active").filter {
-                    it.ticker.contains(query, ignoreCase = true) || it.name.contains(query, ignoreCase = true)
+                if (stocks.isNotEmpty()) {
+                    return@withContext Result.success(stocks)
                 }
-                Result.success(fallbacks)
             }
+
+            // Fallback 1: try description search if name search returned empty
+            val secondaryFilter = """{"left": "description", "operation": "match", "right": "$trimmedQuery"}"""
+            val secondaryBodyJson = """
+                {
+                  "filter": [
+                    {"left": "type", "operation": "equal", "right": "stock"},
+                    {"left": "subtype", "operation": "equal", "right": "common"},
+                    {"left": "market_cap_basic", "operation": "egreater", "right": 5000000000},
+                    {"left": "exchange", "operation": "in_range", "right": ["AMEX", "NASDAQ", "NYSE"]},
+                    $secondaryFilter
+                  ],
+                  "options": {"lang": "en"},
+                  "markets": ["america"],
+                  "columns": [
+                    "name", "close", "change", "change_abs", "volume",
+                    "Recommend.All", "RSI", "MACD.macd", "MACD.signal",
+                    "EMA20", "EMA50", "description", "market_cap_basic", "sector", "logoid"
+                  ],
+                  "sort": {"sortBy": "volume", "sortOrder": "desc"},
+                  "range": [0, $limit]
+                }
+            """.trimIndent()
+
+            val secondaryRequest = Request.Builder()
+                .url("https://scanner.tradingview.com/america/scan")
+                .post(secondaryBodyJson.toRequestBody(jsonMediaType))
+                .addHeader("User-Agent", "Mozilla/5.0")
+                .build()
+
+            val secondaryResponse = client.newCall(secondaryRequest).execute()
+            val secondaryResponseBody = secondaryResponse.body?.string()
+
+            if (secondaryResponse.isSuccessful && !secondaryResponseBody.isNullOrBlank()) {
+                val stocks = parseTradingViewResponse(secondaryResponseBody, "search")
+                if (stocks.isNotEmpty()) {
+                    return@withContext Result.success(stocks)
+                }
+            }
+
+            val fallbacks = getFallbackStocks("active").filter {
+                it.ticker.contains(trimmedQuery, ignoreCase = true) || it.name.contains(trimmedQuery, ignoreCase = true)
+            }
+            Result.success(fallbacks)
         } catch (e: Exception) {
             val fallbacks = getFallbackStocks("active").filter {
                 it.ticker.contains(query, ignoreCase = true) || it.name.contains(query, ignoreCase = true)
