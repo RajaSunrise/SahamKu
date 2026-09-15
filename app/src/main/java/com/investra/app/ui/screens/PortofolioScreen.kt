@@ -20,16 +20,11 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Bookmark
 import androidx.compose.material.icons.filled.CandlestickChart
-import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.History
-import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.MonetizationOn
-import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.ShowChart
 import androidx.compose.material.icons.filled.TrendingUp
-import androidx.compose.material.icons.filled.Verified
-import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
@@ -51,9 +46,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.investra.app.data.model.Position
-import com.investra.app.data.model.Stock
 import com.investra.app.ui.MainViewModel
-import com.investra.app.ui.theme.PrimaryContainer
+import com.investra.app.ui.components.StockLogoImage
 import com.investra.app.ui.theme.PrimaryEmerald
 import com.investra.app.ui.theme.SecondaryBlue
 import com.investra.app.ui.theme.SurfaceContainer
@@ -105,7 +99,7 @@ fun PortofolioScreen(
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Box(modifier = Modifier.size(8.dp).clip(CircleShape).background(PrimaryEmerald))
                             Spacer(modifier = Modifier.width(6.dp))
-                            Text(text = "Virtual Portfolio Value", color = TextMuted, fontSize = 11.sp, fontWeight = FontWeight.Medium)
+                            Text(text = "Virtual Portfolio Value (SQLite Saved)", color = TextMuted, fontSize = 11.sp, fontWeight = FontWeight.Medium)
                         }
                         Box(
                             modifier = Modifier.clip(RoundedCornerShape(12.dp)).background(SurfaceContainerHigh).padding(horizontal = 8.dp, vertical = 2.dp)
@@ -125,8 +119,8 @@ fun PortofolioScreen(
                             Icon(imageVector = Icons.Default.TrendingUp, contentDescription = "PnL", tint = PrimaryEmerald, modifier = Modifier.size(16.dp))
                             Spacer(modifier = Modifier.width(4.dp))
                             Text(
-                                text = "+$${String.format("%,.2f", floatingPnL)} (+${String.format("%.2f", floatingPnLPercent)}%)",
-                                color = PrimaryEmerald,
+                                text = "${if (floatingPnL >= 0) "+" else ""}$${String.format("%,.2f", floatingPnL)} (${if (floatingPnLPercent >= 0) "+" else ""}${String.format("%.2f", floatingPnLPercent)}%)",
+                                color = if (floatingPnL >= 0) PrimaryEmerald else TertiaryContainer,
                                 fontWeight = FontWeight.Bold,
                                 fontSize = 13.sp
                             )
@@ -234,9 +228,12 @@ fun PortofolioScreen(
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Column {
-                            Text(text = ticker, color = TextMain, fontWeight = FontWeight.Bold, fontSize = 15.sp)
-                            Text(text = "Saham Terpilih S&P 500", color = TextMuted, fontSize = 11.sp)
+                        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                            StockLogoImage(ticker = ticker, size = 36.dp, fontSize = 14)
+                            Column {
+                                Text(text = ticker, color = TextMain, fontWeight = FontWeight.Bold, fontSize = 15.sp)
+                                Text(text = "Saham Terpilih Watchlist", color = TextMuted, fontSize = 11.sp)
+                            }
                         }
                         Button(
                             onClick = { onStockClick(ticker) },
@@ -274,12 +271,7 @@ fun PositionCardItem(
                 verticalAlignment = Alignment.Top
             ) {
                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                    Box(
-                        modifier = Modifier.size(38.dp).clip(RoundedCornerShape(8.dp)).background(SurfaceContainerHigh),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Text(text = position.ticker.take(1), color = TextMain, fontWeight = FontWeight.Bold, fontSize = 16.sp)
-                    }
+                    StockLogoImage(ticker = position.ticker, size = 38.dp, fontSize = 16)
                     Column {
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Text(text = position.ticker, color = TextMain, fontWeight = FontWeight.Bold, fontSize = 15.sp)

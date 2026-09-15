@@ -18,11 +18,21 @@ class TradingViewRepositoryTest {
         assertEquals("NVDA", gainers[0].ticker)
         assertEquals("NVIDIA Corporation", gainers[0].name)
         assertTrue(gainers[0].price > 0)
+        assertNotNull(gainers[0].logoUrl)
     }
 
     @Test
     fun testFetchStockScannerReturnsData() = runBlocking {
         val result = repository.fetchStockScanner("gainers", 10)
+        assertTrue(result.isSuccess)
+        val stocks = result.getOrNull()
+        assertNotNull(stocks)
+        assertTrue(stocks!!.isNotEmpty())
+    }
+
+    @Test
+    fun testSearchStocksReturnsData() = runBlocking {
+        val result = repository.searchStocks("NVDA", 10)
         assertTrue(result.isSuccess)
         val stocks = result.getOrNull()
         assertNotNull(stocks)

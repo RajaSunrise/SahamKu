@@ -1,7 +1,9 @@
 package com.investra.app.ui
 
-import androidx.lifecycle.ViewModel
+import android.app.Application
+import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
+import com.investra.app.data.db.DatabaseHelper
 import com.investra.app.data.model.CalculatorState
 import com.investra.app.data.model.Position
 import com.investra.app.data.model.ScreenerFilter
@@ -9,15 +11,30 @@ import com.investra.app.data.model.Stock
 import com.investra.app.data.model.TradeHistory
 import com.investra.app.data.repository.PortfolioRepository
 import com.investra.app.data.repository.TradingViewRepository
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 
-class MainViewModel(
-    private val tradingViewRepo: TradingViewRepository = TradingViewRepository(),
-    private val portfolioRepo: PortfolioRepository = PortfolioRepository()
-) : ViewModel() {
+class MainViewModel(application: Application) : AndroidViewModel(application) {
+
+    private val dbHelper = DatabaseHelper(application)
+    private val tradingViewRepo = TradingViewRepository()
+    private val portfolioRepo = PortfolioRepository(dbHelper)
+
+    // Search query
+    private val _searchQuery = MutableStateFlow("")
+    val searchQuery: StateFlow<String> = _searchQuery.asStateFlow()
+
+    private val _searchResults = MutableStateFlow<List<Stock>>(emptyList())
+    val searchResults: StateFlow<List<Stock>> = _searchResults.asStateFlow()
+
+    private val _isSearching = MutableStateFlow(false)
+    val isSearching: StateFlow<Boolean> = _isSearching.asStateFlow()
+
+    private var searchJob: Job? = null
 
     // Market stocks
     private val _gainers = MutableStateFlow<List<Stock>>(emptyList())
@@ -69,6 +86,25 @@ class MainViewModel(
 
             val activeResult = tradingViewRepo.fetchStockScanner("active", 10)
             _activeStocks.value = activeResult.getOrDefault(tradingViewRepo.getFallbackStocks("active"))
+        }
+    }
+
+    fun onSearchQueryChanged(query: String) {
+        _searchQuery.value = query
+        searchJob?.cancel()
+
+        if (query.isBlank()) {
+            _searchResults.value = emptyList()
+            _isSearching.value = false
+            return
+        }
+
+        searchJob = viewModelScope.launch {
+            _isSearching.value = true
+            delay(300) // Debounce
+            val result = tradingViewRepo.searchStocks(query, 15)
+            _searchResults.value = result.getOrDefault(emptyList())
+            _isSearching.value = false
         }
     }
 

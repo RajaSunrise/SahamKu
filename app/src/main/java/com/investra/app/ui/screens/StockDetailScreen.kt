@@ -15,8 +15,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.LazyRow
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -28,23 +26,18 @@ import androidx.compose.material.icons.filled.CallSplit
 import androidx.compose.material.icons.filled.Flag
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.OpenInFull
-import androidx.compose.material.icons.filled.Shield
 import androidx.compose.material.icons.filled.ShoppingCartCheckout
 import androidx.compose.material.icons.filled.Speed
 import androidx.compose.material.icons.filled.StackedLineChart
 import androidx.compose.material.icons.filled.Star
-import androidx.compose.material.icons.filled.Stars
-import androidx.compose.material.icons.filled.TrackChanges
 import androidx.compose.material.icons.filled.TrendingUp
 import androidx.compose.material.icons.filled.Tune
-import androidx.compose.material.icons.filled.VerticalAlignTop
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -65,6 +58,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.investra.app.data.model.Stock
 import com.investra.app.ui.MainViewModel
+import com.investra.app.ui.components.StockLogoImage
 import com.investra.app.ui.theme.PrimaryContainer
 import com.investra.app.ui.theme.PrimaryEmerald
 import com.investra.app.ui.theme.SecondaryBlue
@@ -142,12 +136,7 @@ fun StockDetailScreen(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                            Box(
-                                modifier = Modifier.size(40.dp).clip(RoundedCornerShape(10.dp)).background(SurfaceContainerHigh),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                Text(text = stock.ticker.take(1), color = TextMain, fontWeight = FontWeight.Bold, fontSize = 18.sp)
-                            }
+                            StockLogoImage(ticker = stock.ticker, logoUrl = stock.logoUrl, size = 40.dp, fontSize = 18)
                             Column {
                                 Row(verticalAlignment = Alignment.CenterVertically) {
                                     Text(text = stock.ticker, color = TextMain, fontWeight = FontWeight.Bold, fontSize = 18.sp)
@@ -168,7 +157,7 @@ fun StockDetailScreen(
                             Row(verticalAlignment = Alignment.CenterVertically) {
                                 Icon(imageVector = Icons.Default.TrendingUp, contentDescription = "Up", tint = PrimaryEmerald, modifier = Modifier.size(14.dp))
                                 Spacer(modifier = Modifier.width(4.dp))
-                                Text(text = "+${String.format("%.2f", stock.changePercent)}%", color = PrimaryEmerald, fontWeight = FontWeight.Bold, fontSize = 12.sp)
+                                Text(text = "${if (stock.changePercent >= 0) "+" else ""}${String.format("%.2f", stock.changePercent)}%", color = PrimaryEmerald, fontWeight = FontWeight.Bold, fontSize = 12.sp)
                             }
                         }
                     }
@@ -189,8 +178,8 @@ fun StockDetailScreen(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.SpaceBetween
                     ) {
-                        Text(text = "Volume: 48.2M", color = TextMuted, fontSize = 11.sp)
-                        Text(text = "Rentang Hari: $137.10 - $143.85", color = TextMuted, fontSize = 11.sp)
+                        Text(text = "Volume: ${stock.volumeFormatted}", color = TextMuted, fontSize = 11.sp)
+                        Text(text = "Rentang Hari: $${String.format("%.2f", stock.price * 0.98)} - $${String.format("%.2f", stock.price * 1.02)}", color = TextMuted, fontSize = 11.sp)
                     }
                 }
             }
@@ -244,8 +233,8 @@ fun StockDetailScreen(
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                                Text(text = "• MA20: 138.45", color = PrimaryEmerald, fontSize = 11.sp, fontWeight = FontWeight.Bold)
-                                Text(text = "• MA50: 132.80", color = SecondaryBlue, fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                                Text(text = "• EMA20: $${String.format("%.2f", stock.ema20)}", color = PrimaryEmerald, fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                                Text(text = "• EMA50: $${String.format("%.2f", stock.ema50)}", color = SecondaryBlue, fontSize = 11.sp, fontWeight = FontWeight.Bold)
                             }
                             Text(text = "Live Market", color = TextMuted, fontSize = 10.sp)
                         }
@@ -261,7 +250,6 @@ fun StockDetailScreen(
                             val w = size.width
                             val h = size.height
 
-                            // Draw horizontal grid lines
                             val gridY1 = h * 0.25f
                             val gridY2 = h * 0.55f
                             val gridY3 = h * 0.8f
@@ -270,7 +258,6 @@ fun StockDetailScreen(
                             drawLine(color = SurfaceContainerHighest, start = Offset(0f, gridY2), end = Offset(w, gridY2), strokeWidth = 1f)
                             drawLine(color = SurfaceContainerHighest, start = Offset(0f, gridY3), end = Offset(w, gridY3), strokeWidth = 1f)
 
-                            // Draw MA lines
                             val ma20Path = Path().apply {
                                 moveTo(0f, h * 0.7f)
                                 cubicTo(w * 0.3f, h * 0.6f, w * 0.6f, h * 0.4f, w, h * 0.2f)
@@ -283,7 +270,6 @@ fun StockDetailScreen(
                             }
                             drawPath(path = ma50Path, color = SecondaryBlue, style = Stroke(width = 1.5.dp.toPx()))
 
-                            // Draw Candlesticks
                             val candleCount = 10
                             val step = w / candleCount
                             for (i in 0 until candleCount) {
@@ -296,7 +282,6 @@ fun StockDetailScreen(
                                 drawLine(color = color, start = Offset(x, topY - 10f), end = Offset(x, topY + candleHeight + 10f), strokeWidth = 2f)
                                 drawRect(color = color, topLeft = Offset(x - 8f, topY), size = Size(16f, candleHeight))
 
-                                // Volume bar
                                 val volH = (i + 1) * 6f + 10f
                                 drawRect(color = color.copy(alpha = 0.5f), topLeft = Offset(x - 8f, h - volH), size = Size(16f, volH))
                             }
@@ -310,7 +295,7 @@ fun StockDetailScreen(
                             Row(verticalAlignment = Alignment.CenterVertically) {
                                 Icon(imageVector = Icons.Default.Tune, contentDescription = "Tune", tint = TextMuted, modifier = Modifier.size(14.dp))
                                 Spacer(modifier = Modifier.width(4.dp))
-                                Text(text = "Vol: 48.25M (Akumulasi Institusi)", color = TextMuted, fontSize = 10.sp)
+                                Text(text = "Vol: ${stock.volumeFormatted} (TradingView Live)", color = TextMuted, fontSize = 10.sp)
                             }
                             Row(verticalAlignment = Alignment.CenterVertically) {
                                 Text(text = "Fullscreen", color = PrimaryEmerald, fontSize = 10.sp, fontWeight = FontWeight.Bold)
@@ -337,8 +322,8 @@ fun StockDetailScreen(
                         ) {
                             Column {
                                 Text(text = "KONSENSUS TEKNIKAL AI", color = TextMuted, fontSize = 10.sp, fontWeight = FontWeight.Bold)
-                                Text(text = "STRONG BUY", color = TextMain, fontWeight = FontWeight.Bold, fontSize = 20.sp)
-                                Text(text = "Dihitung dari 21 agregator model harian", color = TextMuted, fontSize = 11.sp)
+                                Text(text = stock.recommendationText, color = TextMain, fontWeight = FontWeight.Bold, fontSize = 20.sp)
+                                Text(text = "Dihitung dari TradingView scanner", color = TextMuted, fontSize = 11.sp)
                             }
                             Box(
                                 modifier = Modifier
@@ -349,7 +334,7 @@ fun StockDetailScreen(
                                 Row(verticalAlignment = Alignment.CenterVertically) {
                                     Icon(imageVector = Icons.Default.Bolt, contentDescription = "Score", tint = PrimaryEmerald, modifier = Modifier.size(16.dp))
                                     Spacer(modifier = Modifier.width(4.dp))
-                                    Text(text = "91%", color = PrimaryEmerald, fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                                    Text(text = "${(stock.recommendationScore * 100).toInt()}%", color = PrimaryEmerald, fontWeight = FontWeight.Bold, fontSize = 16.sp)
                                 }
                             }
                         }
@@ -370,9 +355,9 @@ fun StockDetailScreen(
 
                         // Deep Dive Indicators
                         Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                            IndicatorDetailRow(icon = Icons.Default.Speed, title = "RSI (14)", value = "62.4", desc = "Status: Zona Akumulasi Sehat")
-                            IndicatorDetailRow(icon = Icons.Default.CallSplit, title = "MACD (12, 26, 9)", value = "Bullish Cross", desc = "Garis sinyal melintasi histogram ke atas")
-                            IndicatorDetailRow(icon = Icons.Default.StackedLineChart, title = "EMA 20 & EMA 50", value = "Golden Cross", desc = "EMA 20 ($138.45) bergerak mantap di atas EMA 50")
+                            IndicatorDetailRow(icon = Icons.Default.Speed, title = "RSI (14)", value = "${String.format("%.1f", stock.rsi)}", desc = "Status: Akumulasi Teknikal")
+                            IndicatorDetailRow(icon = Icons.Default.CallSplit, title = "MACD (12, 26, 9)", value = stock.macdStatus, desc = "Analisis momentum tren harian")
+                            IndicatorDetailRow(icon = Icons.Default.StackedLineChart, title = "EMA 20 & EMA 50", value = "EMA20: $${String.format("%.2f", stock.ema20)}", desc = "Golden Cross EMA 20/50 Valid")
                         }
                     }
                 }
@@ -404,12 +389,12 @@ fun StockDetailScreen(
                         }
 
                         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                            LevelTile(title = "SUPPORT 1", value = "$136.00", sub = "-4.56% dari saat ini", color = TextMain, modifier = Modifier.weight(1f))
-                            LevelTile(title = "RESISTANCE 1", value = "$145.00", sub = "+1.75% (Titik Uji)", color = TextMain, modifier = Modifier.weight(1f))
+                            LevelTile(title = "SUPPORT 1", value = "$${String.format("%.2f", stock.support1)}", sub = "Batas Support", color = TextMain, modifier = Modifier.weight(1f))
+                            LevelTile(title = "RESISTANCE 1", value = "$${String.format("%.2f", stock.resistance1)}", sub = "Batas Resistance", color = TextMain, modifier = Modifier.weight(1f))
                         }
                         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                            LevelTile(title = "TARGET TP 1", value = "$152.00", sub = "+6.67% Target", color = PrimaryEmerald, modifier = Modifier.weight(1f))
-                            LevelTile(title = "TARGET TP 2", value = "$160.00", sub = "+12.28% Target", color = PrimaryEmerald, modifier = Modifier.weight(1f))
+                            LevelTile(title = "TARGET TP 1", value = "$${String.format("%.2f", stock.targetPrice1)}", sub = "+7.00% Target", color = PrimaryEmerald, modifier = Modifier.weight(1f))
+                            LevelTile(title = "TARGET TP 2", value = "$${String.format("%.2f", stock.targetPrice2)}", sub = "+12.00% Target", color = PrimaryEmerald, modifier = Modifier.weight(1f))
                         }
 
                         Row(
@@ -425,7 +410,7 @@ fun StockDetailScreen(
                                 Icon(imageVector = Icons.Default.Balance, contentDescription = "Balance", tint = PrimaryEmerald, modifier = Modifier.size(20.dp))
                                 Column {
                                     Text(text = "Rasio Risk / Reward (R:R)", color = TextMain, fontWeight = FontWeight.SemiBold, fontSize = 12.sp)
-                                    Text(text = "Berdasarkan Stop Loss $136 & TP1 $152", color = TextMuted, fontSize = 10.sp)
+                                    Text(text = "Stop Loss $${String.format("%.2f", stock.stopLossPrice)} & TP1 $${String.format("%.2f", stock.targetPrice1)}", color = TextMuted, fontSize = 10.sp)
                                 }
                             }
                             Text(text = "1 : 2.69", color = PrimaryEmerald, fontWeight = FontWeight.Bold, fontSize = 15.sp)

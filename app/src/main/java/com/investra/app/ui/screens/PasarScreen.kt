@@ -23,13 +23,18 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccountBalanceWallet
 import androidx.compose.material.icons.filled.ArrowDropUp
 import androidx.compose.material.icons.filled.Bolt
+import androidx.compose.material.icons.filled.Clear
+import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.TrendingDown
-import androidx.compose.material.icons.filled.TrendingUp
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -45,6 +50,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.investra.app.data.model.Stock
 import com.investra.app.ui.MainViewModel
+import com.investra.app.ui.components.StockLogoImage
 import com.investra.app.ui.theme.PrimaryContainer
 import com.investra.app.ui.theme.PrimaryEmerald
 import com.investra.app.ui.theme.SurfaceContainer
@@ -66,11 +72,19 @@ fun PasarScreen(
     val losers by viewModel.losers.collectAsState()
     val activeStocks by viewModel.activeStocks.collectAsState()
 
-    val displayStocks = when (selectedTab) {
-        "losers" -> losers
-        "active" -> activeStocks
-        "unusual" -> activeStocks
-        else -> gainers
+    val searchQuery by viewModel.searchQuery.collectAsState()
+    val searchResults by viewModel.searchResults.collectAsState()
+    val isSearching by viewModel.isSearching.collectAsState()
+
+    val displayStocks = if (searchQuery.isNotBlank()) {
+        searchResults
+    } else {
+        when (selectedTab) {
+            "losers" -> losers
+            "active" -> activeStocks
+            "unusual" -> activeStocks
+            else -> gainers
+        }
     }
 
     LazyColumn(
@@ -80,6 +94,38 @@ fun PasarScreen(
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
         item { Spacer(modifier = Modifier.height(8.dp)) }
+
+        // Search Bar Real-Time
+        item {
+            OutlinedTextField(
+                value = searchQuery,
+                onValueChange = { viewModel.onSearchQueryChanged(it) },
+                placeholder = { Text(text = "Cari saham AS real-time (cth: NVDA, Apple, Tesla)...", color = TextMuted, fontSize = 13.sp) },
+                leadingIcon = {
+                    Icon(imageVector = Icons.Default.Search, contentDescription = "Search", tint = PrimaryEmerald)
+                },
+                trailingIcon = {
+                    if (isSearching) {
+                        CircularProgressIndicator(modifier = Modifier.size(20.dp), strokeWidth = 2.dp, color = PrimaryEmerald)
+                    } else if (searchQuery.isNotEmpty()) {
+                        IconButton(onClick = { viewModel.onSearchQueryChanged("") }) {
+                            Icon(imageVector = Icons.Default.Clear, contentDescription = "Clear", tint = TextMuted)
+                        }
+                    }
+                },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(12.dp))
+                    .background(SurfaceContainer),
+                colors = OutlinedTextFieldDefaults.colors(
+                    focusedBorderColor = PrimaryEmerald,
+                    unfocusedBorderColor = Color.Transparent,
+                    focusedTextColor = TextMain,
+                    unfocusedTextColor = TextMain
+                ),
+                singleLine = true
+            )
+        }
 
         // Virtual Paper Trading Banner
         item {
@@ -194,52 +240,63 @@ fun PasarScreen(
             }
         }
 
-        // Radar Pasar AS Category Tabs
-        item {
-            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Text(
-                        text = "Radar Pasar AS",
-                        color = TextMain,
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 16.sp
-                    )
-                    Text(
-                        text = "Volume Real-Time",
-                        color = TextMuted,
-                        fontSize = 11.sp
-                    )
-                }
+        // Radar Pasar AS Category Tabs (Visible if not searching)
+        if (searchQuery.isBlank()) {
+            item {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = "Radar Pasar AS (> $1B Valuation)",
+                            color = TextMain,
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 16.sp
+                        )
+                        Text(
+                            text = "TradingView Real-Time",
+                            color = TextMuted,
+                            fontSize = 11.sp
+                        )
+                    }
 
-                LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    val tabs = listOf(
-                        "gainers" to "Top Gainers",
-                        "losers" to "Top Losers",
-                        "active" to "Most Active",
-                        "unusual" to "Unusual Volume"
-                    )
-                    items(tabs) { (id, label) ->
-                        val isSelected = selectedTab == id
-                        Box(
-                            modifier = Modifier
-                                .clip(RoundedCornerShape(20.dp))
-                                .background(if (isSelected) PrimaryEmerald else SurfaceContainerHigh)
-                                .clickable { viewModel.setCategoryTab(id) }
-                                .padding(horizontal = 14.dp, vertical = 8.dp)
-                        ) {
-                            Text(
-                                text = label,
-                                color = if (isSelected) Color(0xFF003824) else TextMuted,
-                                fontSize = 12.sp,
-                                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium
-                            )
+                    LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        val tabs = listOf(
+                            "gainers" to "Top Gainers",
+                            "losers" to "Top Losers",
+                            "active" to "Most Active",
+                            "unusual" to "Unusual Volume"
+                        )
+                        items(tabs) { (id, label) ->
+                            val isSelected = selectedTab == id
+                            Box(
+                                modifier = Modifier
+                                    .clip(RoundedCornerShape(20.dp))
+                                    .background(if (isSelected) PrimaryEmerald else SurfaceContainerHigh)
+                                    .clickable { viewModel.setCategoryTab(id) }
+                                    .padding(horizontal = 14.dp, vertical = 8.dp)
+                            ) {
+                                Text(
+                                    text = label,
+                                    color = if (isSelected) Color(0xFF003824) else TextMuted,
+                                    fontSize = 12.sp,
+                                    fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium
+                                )
+                            }
                         }
                     }
                 }
+            }
+        } else {
+            item {
+                Text(
+                    text = "Hasil Pencarian Saham ('$searchQuery')",
+                    color = TextMain,
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 15.sp
+                )
             }
         }
 
@@ -253,97 +310,99 @@ fun PasarScreen(
         }
 
         // Sorotan Top Losers Section
-        item {
-            Column(
-                modifier = Modifier.padding(top = 8.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
+        if (searchQuery.isBlank()) {
+            item {
+                Column(
+                    modifier = Modifier.padding(top = 8.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Icon(
-                            imageVector = Icons.Default.TrendingDown,
-                            contentDescription = "Losers",
-                            tint = TertiaryContainer,
-                            modifier = Modifier.size(20.dp)
-                        )
-                        Spacer(modifier = Modifier.width(6.dp))
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Icon(
+                                imageVector = Icons.Default.TrendingDown,
+                                contentDescription = "Losers",
+                                tint = TertiaryContainer,
+                                modifier = Modifier.size(20.dp)
+                            )
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Text(
+                                text = "Sorotan Top Losers",
+                                color = TextMain,
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 15.sp
+                            )
+                        }
                         Text(
-                            text = "Sorotan Top Losers",
-                            color = TextMain,
-                            fontWeight = FontWeight.Bold,
-                            fontSize = 15.sp
+                            text = "Peluang Buy on Dip?",
+                            color = TertiaryContainer,
+                            fontSize = 11.sp,
+                            fontWeight = FontWeight.SemiBold
                         )
                     }
-                    Text(
-                        text = "Peluang Buy on Dip?",
-                        color = TertiaryContainer,
-                        fontSize = 11.sp,
-                        fontWeight = FontWeight.SemiBold
-                    )
-                }
 
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    val loserStocks = losers.take(2)
-                    loserStocks.forEach { loser ->
-                        Card(
-                            colors = CardDefaults.cardColors(containerColor = SurfaceContainer),
-                            shape = RoundedCornerShape(12.dp),
-                            modifier = Modifier
-                                .weight(1f)
-                                .clickable { onStockClick(loser) }
-                        ) {
-                            Column(
-                                modifier = Modifier.padding(12.dp),
-                                verticalArrangement = Arrangement.spacedBy(8.dp)
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        val loserStocks = losers.take(2)
+                        loserStocks.forEach { loser ->
+                            Card(
+                                colors = CardDefaults.cardColors(containerColor = SurfaceContainer),
+                                shape = RoundedCornerShape(12.dp),
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .clickable { onStockClick(loser) }
                             ) {
-                                Row(
-                                    modifier = Modifier.fillMaxWidth(),
-                                    horizontalArrangement = Arrangement.SpaceBetween
+                                Column(
+                                    modifier = Modifier.padding(12.dp),
+                                    verticalArrangement = Arrangement.spacedBy(8.dp)
                                 ) {
-                                    Column {
-                                        Text(text = loser.ticker, color = TextMain, fontWeight = FontWeight.Bold, fontSize = 14.sp)
-                                        Text(text = loser.name, color = TextMuted, fontSize = 10.sp, maxLines = 1)
+                                    Row(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        horizontalArrangement = Arrangement.SpaceBetween
+                                    ) {
+                                        Column {
+                                            Text(text = loser.ticker, color = TextMain, fontWeight = FontWeight.Bold, fontSize = 14.sp)
+                                            Text(text = loser.name, color = TextMuted, fontSize = 10.sp, maxLines = 1)
+                                        }
+                                        Box(
+                                            modifier = Modifier
+                                                .clip(RoundedCornerShape(4.dp))
+                                                .background(TertiaryContainer.copy(alpha = 0.2f))
+                                                .padding(horizontal = 6.dp, vertical = 2.dp)
+                                        ) {
+                                            Text(
+                                                text = "${String.format("%.2f", loser.changePercent)}%",
+                                                color = TertiaryContainer,
+                                                fontSize = 10.sp,
+                                                fontWeight = FontWeight.Bold
+                                            )
+                                        }
                                     }
-                                    Box(
-                                        modifier = Modifier
-                                            .clip(RoundedCornerShape(4.dp))
-                                            .background(TertiaryContainer.copy(alpha = 0.2f))
-                                            .padding(horizontal = 6.dp, vertical = 2.dp)
+                                    Row(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        horizontalArrangement = Arrangement.SpaceBetween,
+                                        verticalAlignment = Alignment.CenterVertically
                                     ) {
                                         Text(
-                                            text = "${String.format("%.2f", loser.changePercent)}%",
-                                            color = TertiaryContainer,
-                                            fontSize = 10.sp,
-                                            fontWeight = FontWeight.Bold
+                                            text = "$${String.format("%.2f", loser.price)}",
+                                            color = TextMain,
+                                            fontWeight = FontWeight.Bold,
+                                            fontSize = 15.sp
                                         )
-                                    }
-                                }
-                                Row(
-                                    modifier = Modifier.fillMaxWidth(),
-                                    horizontalArrangement = Arrangement.SpaceBetween,
-                                    verticalAlignment = Alignment.CenterVertically
-                                ) {
-                                    Text(
-                                        text = "$${String.format("%.2f", loser.price)}",
-                                        color = TextMain,
-                                        fontWeight = FontWeight.Bold,
-                                        fontSize = 15.sp
-                                    )
-                                    Button(
-                                        onClick = { onQuickBuyClick(loser) },
-                                        colors = ButtonDefaults.buttonColors(containerColor = SurfaceContainerHigh),
-                                        shape = RoundedCornerShape(6.dp),
-                                        contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 8.dp, vertical = 4.dp),
-                                        modifier = Modifier.height(28.dp)
-                                    ) {
-                                        Text(text = "Short/Buy", color = TextMain, fontSize = 10.sp, fontWeight = FontWeight.Bold)
+                                        Button(
+                                            onClick = { onQuickBuyClick(loser) },
+                                            colors = ButtonDefaults.buttonColors(containerColor = SurfaceContainerHigh),
+                                            shape = RoundedCornerShape(6.dp),
+                                            contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 8.dp, vertical = 4.dp),
+                                            modifier = Modifier.height(28.dp)
+                                        ) {
+                                            Text(text = "Short/Buy", color = TextMain, fontSize = 10.sp, fontWeight = FontWeight.Bold)
+                                        }
                                     }
                                 }
                             }
@@ -420,20 +479,7 @@ fun StockCardItem(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(10.dp)
                 ) {
-                    Box(
-                        modifier = Modifier
-                            .size(38.dp)
-                            .clip(RoundedCornerShape(8.dp))
-                            .background(SurfaceContainerHigh),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Text(
-                            text = stock.ticker.take(1),
-                            color = TextMain,
-                            fontWeight = FontWeight.Bold,
-                            fontSize = 16.sp
-                        )
-                    }
+                    StockLogoImage(ticker = stock.ticker, logoUrl = stock.logoUrl)
                     Column {
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Text(text = stock.ticker, color = TextMain, fontWeight = FontWeight.Bold, fontSize = 15.sp)
@@ -495,10 +541,10 @@ fun StockCardItem(
                     )
                     Spacer(modifier = Modifier.width(4.dp))
                     Text(
-                        text = stock.catalyst,
+                        text = "${stock.recommendationText} • ${stock.catalyst}",
                         color = PrimaryEmerald,
                         fontSize = 10.sp,
-                        fontWeight = FontWeight.Medium
+                        fontWeight = FontWeight.Bold
                     )
                 }
 
