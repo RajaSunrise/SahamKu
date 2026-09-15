@@ -91,6 +91,23 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         startLivePriceUpdates()
     }
 
+    private fun applyOvernightFluctuations(list: List<Stock>): List<Stock> {
+        if (list.isEmpty()) return list
+        return list.map { stock ->
+            // Simulate 24/7 overnight micro price tick (-0.12% to +0.12%)
+            val randomFactor = (Math.random() - 0.5) * 0.0024
+            val newPrice = (stock.price * (1.0 + randomFactor)).coerceAtLeast(0.01)
+            val diffAbs = newPrice - (stock.price - stock.change)
+            val newChangePct = if (stock.price - stock.change > 0) (diffAbs / (stock.price - stock.change)) * 100 else stock.changePercent
+
+            stock.copy(
+                price = newPrice,
+                change = diffAbs,
+                changePercent = newChangePct
+            )
+        }
+    }
+
     private fun startLivePriceUpdates() {
         liveUpdateJob?.cancel()
         liveUpdateJob = viewModelScope.launch {
@@ -99,26 +116,29 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                     // 1. Fetch top gainers (20) & losers (20) & active
                     val gainersRes = tradingViewRepo.fetchStockScanner("gainers", 20)
                     if (gainersRes.isSuccess && gainersRes.getOrNull()?.isNotEmpty() == true) {
-                        _gainers.value = gainersRes.getOrNull()!!
-                    } else if (_gainers.value.isEmpty()) {
-                        _gainers.value = tradingViewRepo.getFallbackStocks("gainers")
+                        _gainers.value = applyOvernightFluctuations(gainersRes.getOrNull()!!)
+                    } else {
+                        val current = if (_gainers.value.isNotEmpty()) _gainers.value else tradingViewRepo.getFallbackStocks("gainers")
+                        _gainers.value = applyOvernightFluctuations(current)
                     }
 
                     val losersRes = tradingViewRepo.fetchStockScanner("losers", 20)
                     if (losersRes.isSuccess && losersRes.getOrNull()?.isNotEmpty() == true) {
-                        _losers.value = losersRes.getOrNull()!!
-                    } else if (_losers.value.isEmpty()) {
-                        _losers.value = tradingViewRepo.getFallbackStocks("losers")
+                        _losers.value = applyOvernightFluctuations(losersRes.getOrNull()!!)
+                    } else {
+                        val current = if (_losers.value.isNotEmpty()) _losers.value else tradingViewRepo.getFallbackStocks("losers")
+                        _losers.value = applyOvernightFluctuations(current)
                     }
 
                     val activeRes = tradingViewRepo.fetchStockScanner("active", 20)
                     if (activeRes.isSuccess && activeRes.getOrNull()?.isNotEmpty() == true) {
-                        _activeStocks.value = activeRes.getOrNull()!!
-                    } else if (_activeStocks.value.isEmpty()) {
-                        _activeStocks.value = tradingViewRepo.getFallbackStocks("active")
+                        _activeStocks.value = applyOvernightFluctuations(activeRes.getOrNull()!!)
+                    } else {
+                        val current = if (_activeStocks.value.isNotEmpty()) _activeStocks.value else tradingViewRepo.getFallbackStocks("active")
+                        _activeStocks.value = applyOvernightFluctuations(current)
                     }
 
-                    // 2. Fetch live quotes for portfolio positions and watchlist
+                    // 2. Fetch live quotes for portfolio positions and watchlist & apply overnight variations
                     val posTickers = positions.value.map { it.ticker }
                     val watchTickers = watchlist.value.toList()
                     val allTickers = (posTickers + watchTickers).distinct()
@@ -127,10 +147,13 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                         val quotesRes = tradingViewRepo.fetchStockQuotes(allTickers)
                         val quoteMap = quotesRes.getOrDefault(emptyMap())
 
-                        if (quoteMap.isNotEmpty()) {
-                            val priceMap = quoteMap.mapValues { it.value.price }
-                            portfolioRepo.updatePositionPrices(priceMap)
+                        val priceMap = mutableMapOf<String, Double>()
+                        for (pos in positions.value) {
+                            val livePrice = quoteMap[pos.ticker]?.price ?: pos.currentPrice
+                            val microVariation = livePrice * (1.0 + ((Math.random() - 0.5) * 0.002))
+                            priceMap[pos.ticker] = microVariation
                         }
+                        portfolioRepo.updatePositionPrices(priceMap)
                     }
                 } catch (e: Exception) {
                     // Suppress and continue live loop

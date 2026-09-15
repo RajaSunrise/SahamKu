@@ -45,7 +45,7 @@ class TradingViewRepository {
                   "filter": [
                     {"left": "type", "operation": "equal", "right": "stock"},
                     {"left": "subtype", "operation": "equal", "right": "common"},
-                    {"left": "market_cap_basic", "operation": "egreater", "right": 1000000000},
+                    {"left": "market_cap_basic", "operation": "egreater", "right": 5000000000},
                     {"left": "exchange", "operation": "in_range", "right": ["AMEX", "NASDAQ", "NYSE"]}
                   ],
                   "options": {"lang": "en"},
@@ -146,7 +146,7 @@ class TradingViewRepository {
                   "filter": [
                     {"left": "type", "operation": "equal", "right": "stock"},
                     {"left": "subtype", "operation": "equal", "right": "common"},
-                    {"left": "market_cap_basic", "operation": "egreater", "right": 1000000000},
+                    {"left": "market_cap_basic", "operation": "egreater", "right": 5000000000},
                     {"left": "exchange", "operation": "in_range", "right": ["AMEX", "NASDAQ", "NYSE"]}
                   ],
                   "options": {"lang": "en"},
@@ -271,7 +271,7 @@ class TradingViewRepository {
             }
         }
 
-        return stocks.filter { it.marketCap >= 1_000_000_000.0 }
+        return stocks.filter { it.marketCap >= 5_000_000_000.0 }
     }
 
     private fun getJsonString(array: JsonArray, index: Int, defaultVal: String): String {
@@ -327,6 +327,6 @@ class TradingViewRepository {
             )
             else -> getFallbackStocks("gainers")
         }
-        return list.filter { it.marketCap >= 1_000_000_000.0 }
+        return list.filter { it.marketCap >= 5_000_000_000.0 }
     }
 }
