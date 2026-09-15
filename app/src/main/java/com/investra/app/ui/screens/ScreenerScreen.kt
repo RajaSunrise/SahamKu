@@ -61,8 +61,7 @@ import com.investra.app.ui.theme.TextMuted
 fun ScreenerScreen(
     viewModel: MainViewModel,
     onBackClick: () -> Unit,
-    onStockClick: (Stock) -> Unit,
-    onQuickBuyClick: (Stock) -> Unit
+    onStockClick: (Stock) -> Unit
 ) {
     val filterState by viewModel.screenerFilter.collectAsState()
     val presets = listOf("Breakout 52W High", "RSI Oversold (<30)", "Golden Cross EMA", "Volume Spike >2x", "MACD Reversal")
@@ -225,17 +224,29 @@ fun ScreenerScreen(
             ) {
                 Column(modifier = Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
                     Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.Top) {
-                        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                        Row(
+                            modifier = Modifier.weight(1f),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(10.dp)
+                        ) {
                             StockLogoImage(ticker = stock.ticker, logoUrl = stock.logoUrl, size = 38.dp, fontSize = 16)
-                            Column {
+                            Column(modifier = Modifier.weight(1f)) {
                                 Row(verticalAlignment = Alignment.CenterVertically) {
                                     Text(text = stock.ticker, color = TextMain, fontWeight = FontWeight.Bold, fontSize = 15.sp)
                                     Spacer(modifier = Modifier.width(4.dp))
                                     Text(text = stock.exchange, color = TextMuted, fontSize = 10.sp)
                                 }
-                                Text(text = stock.name, color = TextMuted, fontSize = 11.sp)
+                                Text(
+                                    text = stock.name,
+                                    color = TextMuted,
+                                    fontSize = 11.sp,
+                                    maxLines = 1,
+                                    overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
+                                )
                             }
                         }
+
+                        Spacer(modifier = Modifier.width(8.dp))
 
                         Box(modifier = Modifier.clip(RoundedCornerShape(12.dp)).background(PrimaryEmerald.copy(alpha = 0.15f)).padding(horizontal = 8.dp, vertical = 2.dp)) {
                             Text(text = stock.recommendationText, color = PrimaryEmerald, fontWeight = FontWeight.Bold, fontSize = 10.sp)
@@ -263,28 +274,15 @@ fun ScreenerScreen(
                         }
                     }
 
-                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        Button(
-                            onClick = { viewModel.toggleWatchlist(stock.ticker) },
-                            colors = ButtonDefaults.buttonColors(containerColor = SurfaceContainerHigh),
-                            shape = RoundedCornerShape(8.dp),
-                            modifier = Modifier.weight(1f).height(36.dp)
-                        ) {
-                            Icon(imageVector = Icons.Default.BookmarkAdd, contentDescription = "Watchlist", tint = TextMain, modifier = Modifier.size(16.dp))
-                            Spacer(modifier = Modifier.width(4.dp))
-                            Text(text = "Watchlist", color = TextMain, fontSize = 11.sp, fontWeight = FontWeight.Bold)
-                        }
-
-                        Button(
-                            onClick = { onQuickBuyClick(stock) },
-                            colors = ButtonDefaults.buttonColors(containerColor = PrimaryEmerald),
-                            shape = RoundedCornerShape(8.dp),
-                            modifier = Modifier.weight(1f).height(36.dp)
-                        ) {
-                            Icon(imageVector = Icons.Default.Bolt, contentDescription = "Beli", tint = Color(0xFF003824), modifier = Modifier.size(16.dp))
-                            Spacer(modifier = Modifier.width(4.dp))
-                            Text(text = "Beli Demo", color = Color(0xFF003824), fontSize = 11.sp, fontWeight = FontWeight.Bold)
-                        }
+                    Button(
+                        onClick = { viewModel.toggleWatchlist(stock.ticker) },
+                        colors = ButtonDefaults.buttonColors(containerColor = SurfaceContainerHigh),
+                        shape = RoundedCornerShape(8.dp),
+                        modifier = Modifier.fillMaxWidth().height(36.dp)
+                    ) {
+                        Icon(imageVector = Icons.Default.BookmarkAdd, contentDescription = "Watchlist", tint = TextMain, modifier = Modifier.size(16.dp))
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Text(text = "Watchlist", color = TextMain, fontSize = 11.sp, fontWeight = FontWeight.Bold)
                     }
                 }
             }

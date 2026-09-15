@@ -60,7 +60,6 @@ import com.investra.app.ui.theme.TextMuted
 fun PasarScreen(
     viewModel: MainViewModel,
     onStockClick: (Stock) -> Unit,
-    onQuickBuyClick: (Stock) -> Unit,
     onSearchClick: () -> Unit = {}
 ) {
     val selectedTab by viewModel.selectedCategoryTab.collectAsState()
@@ -267,8 +266,7 @@ fun PasarScreen(
         items(displayStocks, key = { it.ticker }) { stock ->
             StockCardItem(
                 stock = stock,
-                onStockClick = { onStockClick(stock) },
-                onQuickBuyClick = { onQuickBuyClick(stock) }
+                onStockClick = { onStockClick(stock) }
             )
         }
 
@@ -345,27 +343,12 @@ fun PasarScreen(
                                         )
                                     }
                                 }
-                                Row(
-                                    modifier = Modifier.fillMaxWidth(),
-                                    horizontalArrangement = Arrangement.SpaceBetween,
-                                    verticalAlignment = Alignment.CenterVertically
-                                ) {
-                                    Text(
-                                        text = "$${String.format("%.2f", loser.price)}",
-                                        color = TextMain,
-                                        fontWeight = FontWeight.Bold,
-                                        fontSize = 15.sp
-                                    )
-                                    Button(
-                                        onClick = { onQuickBuyClick(loser) },
-                                        colors = ButtonDefaults.buttonColors(containerColor = SurfaceContainerHigh),
-                                        shape = RoundedCornerShape(6.dp),
-                                        contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 8.dp, vertical = 4.dp),
-                                        modifier = Modifier.height(28.dp)
-                                    ) {
-                                        Text(text = "Short/Buy", color = TextMain, fontSize = 10.sp, fontWeight = FontWeight.Bold)
-                                    }
-                                }
+                                Text(
+                                    text = "$${String.format("%.2f", loser.price)}",
+                                    color = TextMain,
+                                    fontWeight = FontWeight.Bold,
+                                    fontSize = 15.sp
+                                )
                             }
                         }
                     }
@@ -418,8 +401,7 @@ fun IndexCard(name: String, value: String, changePct: String, modifier: Modifier
 @Composable
 fun StockCardItem(
     stock: Stock,
-    onStockClick: () -> Unit,
-    onQuickBuyClick: () -> Unit
+    onStockClick: () -> Unit
 ) {
     val isPositive = stock.changePercent >= 0
 
@@ -437,11 +419,12 @@ fun StockCardItem(
                 verticalAlignment = Alignment.Top
             ) {
                 Row(
+                    modifier = Modifier.weight(1f),
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(10.dp)
                 ) {
                     StockLogoImage(ticker = stock.ticker, logoUrl = stock.logoUrl)
-                    Column {
+                    Column(modifier = Modifier.weight(1f)) {
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Text(text = stock.ticker, color = TextMain, fontWeight = FontWeight.Bold, fontSize = 15.sp)
                             Spacer(modifier = Modifier.width(6.dp))
@@ -454,9 +437,17 @@ fun StockCardItem(
                                 Text(text = stock.exchange, color = TextMuted, fontSize = 9.sp)
                             }
                         }
-                        Text(text = stock.name, color = TextMuted, fontSize = 11.sp, maxLines = 1)
+                        Text(
+                            text = stock.name,
+                            color = TextMuted,
+                            fontSize = 11.sp,
+                            maxLines = 1,
+                            overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
+                        )
                     }
                 }
+
+                Spacer(modifier = Modifier.width(8.dp))
 
                 Column(horizontalAlignment = Alignment.End) {
                     Text(
@@ -493,7 +484,10 @@ fun StockCardItem(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
+                Row(
+                    modifier = Modifier.weight(1f),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
                     Icon(
                         imageVector = Icons.Default.Bolt,
                         contentDescription = "Catalyst",
@@ -505,27 +499,19 @@ fun StockCardItem(
                         text = "${stock.recommendationText} • ${stock.catalyst}",
                         color = PrimaryEmerald,
                         fontSize = 10.sp,
-                        fontWeight = FontWeight.Bold
+                        fontWeight = FontWeight.Bold,
+                        maxLines = 1,
+                        overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
                     )
                 }
 
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text(
-                        text = "Vol: ${stock.volumeFormatted}",
-                        color = TextMuted,
-                        fontSize = 11.sp
-                    )
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Button(
-                        onClick = onQuickBuyClick,
-                        colors = ButtonDefaults.buttonColors(containerColor = PrimaryEmerald),
-                        shape = RoundedCornerShape(6.dp),
-                        contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 10.dp, vertical = 4.dp),
-                        modifier = Modifier.height(28.dp)
-                    ) {
-                        Text(text = "Beli Demo", color = Color(0xFF003824), fontSize = 10.sp, fontWeight = FontWeight.Bold)
-                    }
-                }
+                Spacer(modifier = Modifier.width(8.dp))
+
+                Text(
+                    text = "Vol: ${stock.volumeFormatted}",
+                    color = TextMuted,
+                    fontSize = 11.sp
+                )
             }
         }
     }

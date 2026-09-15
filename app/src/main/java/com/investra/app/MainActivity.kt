@@ -168,13 +168,13 @@ fun MainApp(viewModel: MainViewModel) {
                         onStockClick = { stock ->
                             selectedStockDetail = stock
                             activeSubScreen = "detail"
-                        },
-                        onQuickBuyClick = { buyStockTarget = it }
+                        }
                     )
                 }
                 activeSubScreen == "calculator" -> {
                     CalculatorScreen(
                         viewModel = viewModel,
+                        stock = selectedStockDetail,
                         onBackClick = { activeSubScreen = null },
                         onApplyToOrder = { entryPrice, shares ->
                             val defaultStock = selectedStockDetail ?: Stock("NVDA", "NVIDIA Corporation", "NASDAQ", entryPrice, 7.32, 5.42, 14200000000.0, "14.2B")
@@ -202,7 +202,6 @@ fun MainApp(viewModel: MainViewModel) {
                                     selectedStockDetail = stock
                                     activeSubScreen = "detail"
                                 },
-                                onQuickBuyClick = { buyStockTarget = it },
                                 onSearchClick = { activeSubScreen = "search" }
                             )
                         }
@@ -212,8 +211,7 @@ fun MainApp(viewModel: MainViewModel) {
                                 onStockClick = { stock ->
                                     selectedStockDetail = stock
                                     activeSubScreen = "detail"
-                                },
-                                onQuickBuyClick = { buyStockTarget = it }
+                                }
                             )
                         }
                         NavTab.PORTOFOLIO -> {
