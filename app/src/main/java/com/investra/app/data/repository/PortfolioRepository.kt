@@ -180,6 +180,27 @@ class PortfolioRepository(private val dbHelper: DatabaseHelper? = null) {
         _watchlist.value = current
     }
 
+    fun updatePositionPrices(priceMap: Map<String, Double>) {
+        if (priceMap.isEmpty()) return
+        val currentList = _positions.value.toMutableList()
+        var updated = false
+
+        for (i in currentList.indices) {
+            val pos = currentList[i]
+            val newPrice = priceMap[pos.ticker]
+            if (newPrice != null && newPrice != pos.currentPrice) {
+                val updatedPos = pos.copy(currentPrice = newPrice)
+                currentList[i] = updatedPos
+                dbHelper?.savePosition(updatedPos)
+                updated = true
+            }
+        }
+
+        if (updated) {
+            _positions.value = currentList
+        }
+    }
+
     fun resetPortfolio(newCapital: Double) {
         _initialCapital.value = newCapital
         _virtualCash.value = newCapital

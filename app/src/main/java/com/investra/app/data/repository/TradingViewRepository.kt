@@ -45,7 +45,8 @@ class TradingViewRepository {
                   "filter": [
                     {"left": "type", "operation": "equal", "right": "stock"},
                     {"left": "subtype", "operation": "equal", "right": "common"},
-                    {"left": "market_cap_basic", "operation": "egreater", "right": 1000000000}
+                    {"left": "market_cap_basic", "operation": "egreater", "right": 1000000000},
+                    {"left": "exchange", "operation": "in_range", "right": ["AMEX", "NASDAQ", "NYSE"]}
                   ],
                   "options": {"lang": "en"},
                   "markets": ["america"],
@@ -84,6 +85,52 @@ class TradingViewRepository {
         }
     }
 
+    suspend fun fetchStockQuotes(tickers: List<String>): Result<Map<String, Stock>> = withContext(Dispatchers.IO) {
+        if (tickers.isEmpty()) {
+            return@withContext Result.success(emptyMap())
+        }
+        try {
+            val jsonMediaType = "application/json; charset=utf-8".toMediaType()
+            val tickerArrayJson = gson.toJson(tickers.map { it.trim().uppercase() })
+
+            val requestBodyJson = """
+                {
+                  "filter": [
+                    {"left": "name", "operation": "in_range", "right": $tickerArrayJson}
+                  ],
+                  "options": {"lang": "en"},
+                  "markets": ["america"],
+                  "symbols": {"query": {"types": []}, "tickers": []},
+                  "columns": [
+                    "name", "close", "change", "change_abs", "volume",
+                    "Recommend.All", "RSI", "MACD.macd", "MACD.signal",
+                    "EMA20", "EMA50", "description", "market_cap_basic", "sector", "logoid"
+                  ],
+                  "range": [0, ${tickers.size * 2}]
+                }
+            """.trimIndent()
+
+            val request = Request.Builder()
+                .url("https://scanner.tradingview.com/america/scan")
+                .post(requestBodyJson.toRequestBody(jsonMediaType))
+                .addHeader("User-Agent", "Mozilla/5.0")
+                .build()
+
+            val response = client.newCall(request).execute()
+            val responseBody = response.body?.string()
+
+            if (response.isSuccessful && !responseBody.isNullOrBlank()) {
+                val stocks = parseTradingViewResponse(responseBody, "quotes")
+                val map = stocks.associateBy { it.ticker }
+                Result.success(map)
+            } else {
+                Result.success(emptyMap())
+            }
+        } catch (e: Exception) {
+            Result.success(emptyMap())
+        }
+    }
+
     suspend fun searchStocks(
         query: String,
         limit: Int = 20
@@ -99,7 +146,8 @@ class TradingViewRepository {
                   "filter": [
                     {"left": "type", "operation": "equal", "right": "stock"},
                     {"left": "subtype", "operation": "equal", "right": "common"},
-                    {"left": "market_cap_basic", "operation": "egreater", "right": 1000000000}
+                    {"left": "market_cap_basic", "operation": "egreater", "right": 1000000000},
+                    {"left": "exchange", "operation": "in_range", "right": ["AMEX", "NASDAQ", "NYSE"]}
                   ],
                   "options": {"lang": "en"},
                   "markets": ["america"],
