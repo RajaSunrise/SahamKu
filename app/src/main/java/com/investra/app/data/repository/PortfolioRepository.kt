@@ -46,20 +46,13 @@ class PortfolioRepository(private val dbHelper: DatabaseHelper? = null) {
             _tradeHistory = MutableStateFlow(dbHelper.getTradeHistory())
             tradeHistory = _tradeHistory.asStateFlow()
         } else {
-            _virtualCash = MutableStateFlow(42150.00)
+            _virtualCash = MutableStateFlow(100000.00)
             virtualCash = _virtualCash.asStateFlow()
 
             _initialCapital = MutableStateFlow(100000.00)
             initialCapital = _initialCapital.asStateFlow()
 
-            _positions = MutableStateFlow(
-                listOf(
-                    Position("NVDA", "NVIDIA Corporation", "NASDAQ", 150, 132.00, 142.50, stopLoss = 125.0, takeProfit = 152.0),
-                    Position("AAPL", "Apple Inc.", "NASDAQ", 100, 220.00, 232.50, stopLoss = 210.0, takeProfit = 248.0),
-                    Position("TSLA", "Tesla, Inc.", "NASDAQ", 80, 212.00, 224.80, stopLoss = 200.0, takeProfit = 240.0),
-                    Position("INTC", "Intel Corp", "NASDAQ", 200, 23.20, 22.10, stopLoss = 21.80, takeProfit = 26.0)
-                )
-            )
+            _positions = MutableStateFlow(emptyList())
             positions = _positions.asStateFlow()
 
             _watchlist = MutableStateFlow(
@@ -67,14 +60,7 @@ class PortfolioRepository(private val dbHelper: DatabaseHelper? = null) {
             )
             watchlist = _watchlist.asStateFlow()
 
-            _tradeHistory = MutableStateFlow(
-                listOf(
-                    TradeHistory("1", "PLTR", "Palantir Tech", "NYSE", "SELL", 100, 44.10, 3420.00, 15.4, "Hari Ini, 14:22", "Jual Realisasi Breakout", true),
-                    TradeHistory("2", "MSFT", "Microsoft Corp", "NASDAQ", "SELL", 50, 448.20, 2150.00, 8.6, "Kemarin, 21:10", "Jual Realisasi TP2", true),
-                    TradeHistory("3", "AMZN", "Amazon.com Inc", "NASDAQ", "SELL", 80, 186.40, 1680.00, 6.2, "3 Okt, 19:45", "Jual Realisasi TP1", true),
-                    TradeHistory("4", "AMD", "Advanced Micro", "NASDAQ", "SELL", 60, 158.30, -340.00, -2.8, "1 Okt, 16:05", "Jual Cut Loss Terproteksi", false)
-                )
-            )
+            _tradeHistory = MutableStateFlow(emptyList())
             tradeHistory = _tradeHistory.asStateFlow()
         }
     }

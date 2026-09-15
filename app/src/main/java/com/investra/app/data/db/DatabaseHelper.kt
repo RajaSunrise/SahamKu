@@ -72,33 +72,13 @@ class DatabaseHelper(context: Context) : SQLiteOpenHelper(context, DATABASE_NAME
             """.trimIndent()
         )
 
-        // Seed initial data
+        // Seed initial data for empty portfolio ($100,000 cash, no positions/history)
         val accountValues = ContentValues().apply {
             put("id", 1)
-            put("virtual_cash", 42150.00)
+            put("virtual_cash", 100000.00)
             put("initial_capital", 100000.00)
         }
         db.insert(TABLE_ACCOUNT, null, accountValues)
-
-        val seedPositions = listOf(
-            Position("NVDA", "NVIDIA Corporation", "NASDAQ", 150, 132.00, 142.50, stopLoss = 125.0, takeProfit = 152.0),
-            Position("AAPL", "Apple Inc.", "NASDAQ", 100, 220.00, 232.50, stopLoss = 210.0, takeProfit = 248.0),
-            Position("TSLA", "Tesla, Inc.", "NASDAQ", 80, 212.00, 224.80, stopLoss = 200.0, takeProfit = 240.0),
-            Position("INTC", "Intel Corp", "NASDAQ", 200, 23.20, 22.10, stopLoss = 21.80, takeProfit = 26.0)
-        )
-        for (pos in seedPositions) {
-            val cv = ContentValues().apply {
-                put("ticker", pos.ticker)
-                put("name", pos.name)
-                put("exchange", pos.exchange)
-                put("shares", pos.shares)
-                put("avg_buy_price", pos.avgBuyPrice)
-                put("current_price", pos.currentPrice)
-                put("stop_loss", pos.stopLoss)
-                put("take_profit", pos.takeProfit)
-            }
-            db.insert(TABLE_POSITIONS, null, cv)
-        }
 
         val seedWatchlist = listOf("MSFT", "AMZN", "META", "GOOGL", "AMD", "BRK.B")
         for (ticker in seedWatchlist) {
@@ -106,30 +86,6 @@ class DatabaseHelper(context: Context) : SQLiteOpenHelper(context, DATABASE_NAME
                 put("ticker", ticker)
             }
             db.insert(TABLE_WATCHLIST, null, cv)
-        }
-
-        val seedHistory = listOf(
-            TradeHistory("1", "PLTR", "Palantir Tech", "NYSE", "SELL", 100, 44.10, 3420.00, 15.4, "Hari Ini, 14:22", "Jual Realisasi Breakout", true),
-            TradeHistory("2", "MSFT", "Microsoft Corp", "NASDAQ", "SELL", 50, 448.20, 2150.00, 8.6, "Kemarin, 21:10", "Jual Realisasi TP2", true),
-            TradeHistory("3", "AMZN", "Amazon.com Inc", "NASDAQ", "SELL", 80, 186.40, 1680.00, 6.2, "3 Okt, 19:45", "Jual Realisasi TP1", true),
-            TradeHistory("4", "AMD", "Advanced Micro", "NASDAQ", "SELL", 60, 158.30, -340.00, -2.8, "1 Okt, 16:05", "Jual Cut Loss Terproteksi", false)
-        )
-        for (hist in seedHistory) {
-            val cv = ContentValues().apply {
-                put("id", hist.id)
-                put("ticker", hist.ticker)
-                put("name", hist.name)
-                put("exchange", hist.exchange)
-                put("type", hist.type)
-                put("shares", hist.shares)
-                put("price", hist.price)
-                put("realized_pnl", hist.realizedPnL)
-                put("realized_pnl_percent", hist.realizedPnLPercent)
-                put("date_text", hist.dateText)
-                put("reason_text", hist.reasonText)
-                put("is_win", if (hist.isWin) 1 else 0)
-            }
-            db.insert(TABLE_TRADE_HISTORY, null, cv)
         }
     }
 
@@ -144,7 +100,7 @@ class DatabaseHelper(context: Context) : SQLiteOpenHelper(context, DATABASE_NAME
     fun getAccountInfo(): Pair<Double, Double> {
         val db = readableDatabase
         val cursor = db.rawQuery("SELECT virtual_cash, initial_capital FROM $TABLE_ACCOUNT WHERE id = 1", null)
-        var cash = 42150.0
+        var cash = 100000.0
         var initial = 100000.0
         if (cursor.moveToFirst()) {
             cash = cursor.getDouble(0)

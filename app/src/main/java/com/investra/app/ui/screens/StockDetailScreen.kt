@@ -3,6 +3,8 @@ package com.investra.app.ui.screens
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.detectDragGestures
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -17,6 +19,8 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBackIosNew
 import androidx.compose.material.icons.filled.Balance
@@ -219,8 +223,46 @@ fun StockDetailScreen(
                 }
             }
 
-            // Candlestick Chart Module Canvas
+            // Interactive Candlestick Chart Module Canvas
             item {
+                // Generate timeframe-aware candle dataset based on current stock price
+                val candleList = remember(stock.ticker, stock.price, selectedTf) {
+                    val basePrice = stock.price
+                    val count = 12
+                    val tfMultiplier = when (selectedTf) {
+                        "4H" -> 0.008
+                        "1D" -> 0.015
+                        "1W" -> 0.035
+                        "1M" -> 0.070
+                        "1Y" -> 0.150
+                        else -> 0.015
+                    }
+                    val list = mutableListOf<StockCandlePoint>()
+                    var prevClose = basePrice * (1.0 - (count / 2) * tfMultiplier * 0.3)
+
+                    for (i in 0 until count) {
+                        val factor = (Math.sin(i.toDouble() + selectedTf.hashCode()) * 0.8 + (i * 0.1))
+                        val open = prevClose
+                        val change = basePrice * tfMultiplier * factor
+                        val close = Math.max(1.0, open + change)
+                        val high = Math.max(open, close) + Math.abs(change) * 0.5
+                        val low = Math.max(0.5, Math.min(open, close) - Math.abs(change) * 0.4)
+                        val volume = stock.volume * (0.6 + (i % 5) * 0.15)
+                        val label = "$selectedTf #${i + 1}"
+                        list.add(StockCandlePoint(open, high, low, close, volume, label))
+                        prevClose = close
+                    }
+                    list
+                }
+
+                var touchX by remember { mutableStateOf<Float?>(null) }
+                var selectedCandleIndex by remember { mutableStateOf<Int?>(null) }
+
+                val highlightedCandle = selectedCandleIndex?.let { candleList.getOrNull(it) } ?: candleList.lastOrNull()
+                val activePrice = highlightedCandle?.close ?: stock.price
+                val priceDiff = if (candleList.isNotEmpty()) activePrice - candleList.first().open else stock.change
+                val priceDiffPct = if (candleList.isNotEmpty() && candleList.first().open > 0) (priceDiff / candleList.first().open) * 100 else stock.changePercent
+
                 Card(
                     colors = CardDefaults.cardColors(containerColor = SurfaceContainerLow),
                     shape = RoundedCornerShape(16.dp),
@@ -236,57 +278,192 @@ fun StockDetailScreen(
                                 Text(text = "• EMA20: $${String.format("%.2f", stock.ema20)}", color = PrimaryEmerald, fontSize = 11.sp, fontWeight = FontWeight.Bold)
                                 Text(text = "• EMA50: $${String.format("%.2f", stock.ema50)}", color = SecondaryBlue, fontSize = 11.sp, fontWeight = FontWeight.Bold)
                             }
-                            Text(text = "Live Market", color = TextMuted, fontSize = 10.sp)
+                            Text(
+                                text = if (selectedCandleIndex != null) "Interactive Crosshair" else "Live Market ($selectedTf)",
+                                color = if (selectedCandleIndex != null) PrimaryEmerald else TextMuted,
+                                fontSize = 10.sp,
+                                fontWeight = if (selectedCandleIndex != null) FontWeight.Bold else FontWeight.Normal
+                            )
                         }
 
-                        // SVG / Canvas Candlestick representation
+                        // Touch Tooltip Header
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clip(RoundedCornerShape(8.dp))
+                                .background(SurfaceContainerLowest)
+                                .padding(horizontal = 10.dp, vertical = 6.dp),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                                Text(text = highlightedCandle?.label ?: selectedTf, color = TextMuted, fontSize = 11.sp)
+                                Text(
+                                    text = "$${String.format("%.2f", activePrice)}",
+                                    color = TextMain,
+                                    fontWeight = FontWeight.Bold,
+                                    fontSize = 13.sp
+                                )
+                            }
+                            Text(
+                                text = "${if (priceDiffPct >= 0) "+" else ""}${String.format("%.2f", priceDiffPct)}%",
+                                color = if (priceDiffPct >= 0) PrimaryEmerald else TertiaryContainer,
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 12.sp
+                            )
+                        }
+
+                        // SVG / Canvas Candlestick representation with Touch Gestures
                         val gridLineColor = SurfaceContainerHighest
                         val chartBgColor = SurfaceContainerLowest
+
+                        val minPrice = (candleList.minOfOrNull { it.low } ?: (stock.price * 0.9)).toDouble()
+                        val maxPrice = (candleList.maxOfOrNull { it.high } ?: (stock.price * 1.1)).toDouble()
+                        val priceRange = if (maxPrice - minPrice > 0) maxPrice - minPrice else 1.0
 
                         Canvas(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .height(180.dp)
+                                .height(200.dp)
                                 .clip(RoundedCornerShape(8.dp))
                                 .background(chartBgColor)
+                                .pointerInput(candleList) {
+                                    detectTapGestures(
+                                        onTap = { offset ->
+                                            val step = size.width / candleList.size
+                                            val idx = (offset.x / step).toInt().coerceIn(0, candleList.size - 1)
+                                            touchX = offset.x
+                                            selectedCandleIndex = idx
+                                        }
+                                    )
+                                }
+                                .pointerInput(candleList) {
+                                    detectDragGestures(
+                                        onDragStart = { offset ->
+                                            val step = size.width / candleList.size
+                                            val idx = (offset.x / step).toInt().coerceIn(0, candleList.size - 1)
+                                            touchX = offset.x
+                                            selectedCandleIndex = idx
+                                        },
+                                        onDrag = { change, _ ->
+                                            val step = size.width / candleList.size
+                                            val idx = (change.position.x / step).toInt().coerceIn(0, candleList.size - 1)
+                                            touchX = change.position.x
+                                            selectedCandleIndex = idx
+                                        },
+                                        onDragEnd = {
+                                            // Keep selected candle visible for inspect
+                                        }
+                                    )
+                                }
                         ) {
                             val w = size.width
                             val h = size.height
 
-                            val gridY1 = h * 0.25f
-                            val gridY2 = h * 0.55f
-                            val gridY3 = h * 0.8f
+                            val gridY1 = h * 0.20f
+                            val gridY2 = h * 0.50f
+                            val gridY3 = h * 0.75f
 
                             drawLine(color = gridLineColor, start = Offset(0f, gridY1), end = Offset(w, gridY1), strokeWidth = 1f)
                             drawLine(color = gridLineColor, start = Offset(0f, gridY2), end = Offset(w, gridY2), strokeWidth = 1f)
                             drawLine(color = gridLineColor, start = Offset(0f, gridY3), end = Offset(w, gridY3), strokeWidth = 1f)
 
-                            val ma20Path = Path().apply {
-                                moveTo(0f, h * 0.7f)
-                                cubicTo(w * 0.3f, h * 0.6f, w * 0.6f, h * 0.4f, w, h * 0.2f)
-                            }
-                            drawPath(path = ma20Path, color = PrimaryEmerald, style = Stroke(width = 2.dp.toPx()))
-
-                            val ma50Path = Path().apply {
-                                moveTo(0f, h * 0.8f)
-                                cubicTo(w * 0.4f, h * 0.75f, w * 0.7f, h * 0.55f, w, h * 0.45f)
-                            }
-                            drawPath(path = ma50Path, color = SecondaryBlue, style = Stroke(width = 1.5.dp.toPx()))
-
-                            val candleCount = 10
+                            val candleCount = candleList.size
                             val step = w / candleCount
+
+                            // Draw EMA lines connecting candle closes
+                            val ma20Path = Path()
+                            val ma50Path = Path()
+
                             for (i in 0 until candleCount) {
+                                val c = candleList[i]
+                                val cx = step * i + step / 2
+                                val cy = (h * 0.75f) - (((c.close - minPrice) / priceRange) * (h * 0.6f)).toFloat()
+
+                                val ema20Y = cy + (h * 0.05f)
+                                val ema50Y = cy + (h * 0.12f)
+
+                                if (i == 0) {
+                                    ma20Path.moveTo(cx, ema20Y)
+                                    ma50Path.moveTo(cx, ema50Y)
+                                } else {
+                                    ma20Path.lineTo(cx, ema20Y)
+                                    ma50Path.lineTo(cx, ema50Y)
+                                }
+                            }
+
+                            drawPath(path = ma20Path, color = PrimaryEmerald, style = Stroke(width = 4f))
+                            drawPath(path = ma50Path, color = SecondaryBlue, style = Stroke(width = 3f))
+
+                            // Draw Candlesticks & Volume Bars
+                            val maxVol = (candleList.maxOfOrNull { it.volume } ?: 1.0)
+                            for (i in 0 until candleCount) {
+                                val c = candleList[i]
                                 val x = step * i + step / 2
-                                val isBullish = i % 3 != 1
+                                val isBullish = c.close >= c.open
                                 val color = if (isBullish) PrimaryEmerald else TertiaryContainer
-                                val topY = (h * 0.6f) - (i * (h * 0.04f))
-                                val candleHeight = (h * 0.12f)
 
-                                drawLine(color = color, start = Offset(x, topY - 10f), end = Offset(x, topY + candleHeight + 10f), strokeWidth = 2f)
-                                drawRect(color = color, topLeft = Offset(x - 8f, topY), size = Size(16f, candleHeight))
+                                val highY = (h * 0.75f) - (((c.high - minPrice) / priceRange) * (h * 0.6f)).toFloat()
+                                val lowY = (h * 0.75f) - (((c.low - minPrice) / priceRange) * (h * 0.6f)).toFloat()
+                                val openY = (h * 0.75f) - (((c.open - minPrice) / priceRange) * (h * 0.6f)).toFloat()
+                                val closeY = (h * 0.75f) - (((c.close - minPrice) / priceRange) * (h * 0.6f)).toFloat()
 
-                                val volH = (i + 1) * 6f + 10f
-                                drawRect(color = color.copy(alpha = 0.5f), topLeft = Offset(x - 8f, h - volH), size = Size(16f, volH))
+                                val candleTop = Math.min(openY, closeY)
+                                val candleBottom = Math.max(openY, closeY)
+                                val candleH = Math.max(3f, candleBottom - candleTop)
+
+                                // Wick
+                                drawLine(color = color, start = Offset(x, highY), end = Offset(x, lowY), strokeWidth = 2f)
+
+                                // Candle Body
+                                val candleWidth = (step * 0.55f).coerceIn(8f, 20f)
+                                drawRect(
+                                    color = color,
+                                    topLeft = Offset(x - candleWidth / 2, candleTop),
+                                    size = Size(candleWidth, candleH)
+                                )
+
+                                // Volume Bar
+                                val volH = ((c.volume / maxVol) * (h * 0.20f)).toFloat().coerceAtLeast(4f)
+                                drawRect(
+                                    color = color.copy(alpha = 0.4f),
+                                    topLeft = Offset(x - candleWidth / 2, h - volH),
+                                    size = Size(candleWidth, volH)
+                                )
+                            }
+
+                            // Draw Touch Crosshair line
+                            val currentTouchX = touchX
+                            if (currentTouchX != null && selectedCandleIndex != null) {
+                                val idx = selectedCandleIndex!!.coerceIn(0, candleCount - 1)
+                                val cx = step * idx + step / 2
+                                val c = candleList[idx]
+                                val cy = (h * 0.75f) - (((c.close - minPrice) / priceRange) * (h * 0.6f)).toFloat()
+
+                                val dashEffect = PathEffect.dashPathEffect(floatArrayOf(10f, 10f), 0f)
+                                val crosshairColor = Color.LightGray
+                                // Vertical line
+                                drawLine(
+                                    color = crosshairColor,
+                                    start = Offset(cx, 0f),
+                                    end = Offset(cx, h),
+                                    strokeWidth = 1.5f,
+                                    pathEffect = dashEffect
+                                )
+                                // Horizontal line
+                                drawLine(
+                                    color = crosshairColor,
+                                    start = Offset(0f, cy),
+                                    end = Offset(w, cy),
+                                    strokeWidth = 1.5f,
+                                    pathEffect = dashEffect
+                                )
+                                // Focus Circle Point
+                                drawCircle(
+                                    color = PrimaryEmerald,
+                                    radius = 12f,
+                                    center = Offset(cx, cy)
+                                )
                             }
                         }
 
@@ -298,7 +475,7 @@ fun StockDetailScreen(
                             Row(verticalAlignment = Alignment.CenterVertically) {
                                 Icon(imageVector = Icons.Default.Tune, contentDescription = "Tune", tint = TextMuted, modifier = Modifier.size(14.dp))
                                 Spacer(modifier = Modifier.width(4.dp))
-                                Text(text = "Vol: ${stock.volumeFormatted} (TradingView Live)", color = TextMuted, fontSize = 10.sp)
+                                Text(text = "Tekan/Geser Chart Untuk Crosshair", color = TextMuted, fontSize = 10.sp)
                             }
                             Row(verticalAlignment = Alignment.CenterVertically) {
                                 Text(text = "Fullscreen", color = PrimaryEmerald, fontSize = 10.sp, fontWeight = FontWeight.Bold)
@@ -463,6 +640,15 @@ fun StockDetailScreen(
         }
     }
 }
+
+data class StockCandlePoint(
+    val open: Double,
+    val high: Double,
+    val low: Double,
+    val close: Double,
+    val volume: Double,
+    val label: String
+)
 
 @Composable
 fun IndicatorDetailRow(icon: androidx.compose.ui.graphics.vector.ImageVector, title: String, value: String, desc: String) {
