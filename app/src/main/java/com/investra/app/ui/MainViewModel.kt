@@ -85,21 +85,64 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     private val _toastMessage = MutableStateFlow<String?>(null)
     val toastMessage: StateFlow<String?> = _toastMessage.asStateFlow()
 
+    private var liveUpdateJob: Job? = null
+
     init {
-        loadMarketData()
+        startLivePriceUpdates()
+    }
+
+    private fun startLivePriceUpdates() {
+        liveUpdateJob?.cancel()
+        liveUpdateJob = viewModelScope.launch {
+            while (true) {
+                try {
+                    // 1. Fetch top gainers (20) & losers (20) & active
+                    val gainersRes = tradingViewRepo.fetchStockScanner("gainers", 20)
+                    if (gainersRes.isSuccess && gainersRes.getOrNull()?.isNotEmpty() == true) {
+                        _gainers.value = gainersRes.getOrNull()!!
+                    } else if (_gainers.value.isEmpty()) {
+                        _gainers.value = tradingViewRepo.getFallbackStocks("gainers")
+                    }
+
+                    val losersRes = tradingViewRepo.fetchStockScanner("losers", 20)
+                    if (losersRes.isSuccess && losersRes.getOrNull()?.isNotEmpty() == true) {
+                        _losers.value = losersRes.getOrNull()!!
+                    } else if (_losers.value.isEmpty()) {
+                        _losers.value = tradingViewRepo.getFallbackStocks("losers")
+                    }
+
+                    val activeRes = tradingViewRepo.fetchStockScanner("active", 20)
+                    if (activeRes.isSuccess && activeRes.getOrNull()?.isNotEmpty() == true) {
+                        _activeStocks.value = activeRes.getOrNull()!!
+                    } else if (_activeStocks.value.isEmpty()) {
+                        _activeStocks.value = tradingViewRepo.getFallbackStocks("active")
+                    }
+
+                    // 2. Fetch live quotes for portfolio positions and watchlist
+                    val posTickers = positions.value.map { it.ticker }
+                    val watchTickers = watchlist.value.toList()
+                    val allTickers = (posTickers + watchTickers).distinct()
+
+                    if (allTickers.isNotEmpty()) {
+                        val quotesRes = tradingViewRepo.fetchStockQuotes(allTickers)
+                        val quoteMap = quotesRes.getOrDefault(emptyMap())
+
+                        if (quoteMap.isNotEmpty()) {
+                            val priceMap = quoteMap.mapValues { it.value.price }
+                            portfolioRepo.updatePositionPrices(priceMap)
+                        }
+                    }
+                } catch (e: Exception) {
+                    // Suppress and continue live loop
+                }
+
+                delay(1000) // 1-second interval
+            }
+        }
     }
 
     fun loadMarketData() {
-        viewModelScope.launch {
-            val gainersResult = tradingViewRepo.fetchStockScanner("gainers", 10)
-            _gainers.value = gainersResult.getOrDefault(tradingViewRepo.getFallbackStocks("gainers"))
-
-            val losersResult = tradingViewRepo.fetchStockScanner("losers", 10)
-            _losers.value = losersResult.getOrDefault(tradingViewRepo.getFallbackStocks("losers"))
-
-            val activeResult = tradingViewRepo.fetchStockScanner("active", 10)
-            _activeStocks.value = activeResult.getOrDefault(tradingViewRepo.getFallbackStocks("active"))
-        }
+        startLivePriceUpdates()
     }
 
     fun onSearchQueryChanged(query: String) {
