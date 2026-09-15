@@ -9,8 +9,10 @@ import com.investra.app.data.model.Position
 import com.investra.app.data.model.ScreenerFilter
 import com.investra.app.data.model.Stock
 import com.investra.app.data.model.TradeHistory
+import android.content.Context
 import com.investra.app.data.repository.PortfolioRepository
 import com.investra.app.data.repository.TradingViewRepository
+import com.investra.app.ui.theme.AppThemeMode
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -20,9 +22,20 @@ import kotlinx.coroutines.launch
 
 class MainViewModel(application: Application) : AndroidViewModel(application) {
 
+    private val prefs = application.getSharedPreferences("sahamku_prefs", Context.MODE_PRIVATE)
     private val dbHelper = DatabaseHelper(application)
     private val tradingViewRepo = TradingViewRepository()
     private val portfolioRepo = PortfolioRepository(dbHelper)
+
+    // Theme Mode State
+    private val _themeMode = MutableStateFlow(
+        try {
+            AppThemeMode.valueOf(prefs.getString("theme_mode", AppThemeMode.DARK.name) ?: AppThemeMode.DARK.name)
+        } catch (e: Exception) {
+            AppThemeMode.DARK
+        }
+    )
+    val themeMode: StateFlow<AppThemeMode> = _themeMode.asStateFlow()
 
     // Search query
     private val _searchQuery = MutableStateFlow("")
@@ -110,6 +123,12 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
     fun setCategoryTab(tab: String) {
         _selectedCategoryTab.value = tab
+    }
+
+    fun setThemeMode(mode: AppThemeMode) {
+        _themeMode.value = mode
+        prefs.edit().putString("theme_mode", mode.name).apply()
+        showToast("Tema diubah ke ${mode.label}")
     }
 
     fun setTimeframe(tf: String) {
