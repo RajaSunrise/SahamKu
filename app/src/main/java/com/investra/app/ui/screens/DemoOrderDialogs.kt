@@ -13,7 +13,11 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedTextFieldDefaults
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.CandlestickChart
 import androidx.compose.material.icons.filled.Close
@@ -65,11 +69,12 @@ fun DemoBuyDialog(
     onDismiss: () -> Unit
 ) {
     val virtualCash by viewModel.virtualCash.collectAsState()
-    var shares by remember { mutableStateOf(50) }
+    var sharesText by remember { mutableStateOf("50") }
     var orderType by remember { mutableStateOf("Market Order") }
     var tpChecked by remember { mutableStateOf(true) }
     var slChecked by remember { mutableStateOf(true) }
 
+    val shares = sharesText.toDoubleOrNull() ?: 0.0
     val totalCost = stock.price * shares
     val tpProfit = shares * (stock.price * 0.08)
     val slLoss = shares * (stock.price * 0.03)
@@ -157,7 +162,7 @@ fun DemoBuyDialog(
                     }
                 }
 
-                // Shares Stepper Control
+                // Shares Input Control (Typed Decimal Input & Stepper)
                 Card(
                     colors = CardDefaults.cardColors(containerColor = SurfaceContainerLow),
                     shape = RoundedCornerShape(12.dp),
@@ -166,7 +171,7 @@ fun DemoBuyDialog(
                     Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                             Text(text = "Jumlah Lembar Saham", color = TextMain, fontWeight = FontWeight.SemiBold, fontSize = 12.sp)
-                            Text(text = "Min 1 Lot", color = PrimaryEmerald, fontSize = 10.sp)
+                            Text(text = "Dapat ketik desimal/koma", color = PrimaryEmerald, fontSize = 10.sp)
                         }
 
                         Row(
@@ -179,19 +184,39 @@ fun DemoBuyDialog(
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             IconButton(
-                                onClick = { if (shares > 10) shares -= 10 else if (shares > 1) shares -= 1 },
+                                onClick = {
+                                    val current = sharesText.toDoubleOrNull() ?: 0.0
+                                    val newShares = (current - 1.0).coerceAtLeast(0.1)
+                                    sharesText = if (newShares % 1.0 == 0.0) "${newShares.toInt()}" else String.format("%.2f", newShares)
+                                },
                                 modifier = Modifier.size(36.dp).clip(RoundedCornerShape(8.dp)).background(SurfaceContainerHigh)
                             ) {
                                 Icon(imageVector = Icons.Default.Remove, contentDescription = "Minus", tint = TextMain)
                             }
 
-                            Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                                Text(text = "$shares", color = TextMain, fontWeight = FontWeight.Bold, fontSize = 22.sp)
-                                Text(text = "Shares", color = TextMuted, fontSize = 10.sp)
-                            }
+                            OutlinedTextField(
+                                value = sharesText,
+                                onValueChange = { input ->
+                                    // Replace comma with dot for Indonesian keyboard compatibility
+                                    sharesText = input.replace(',', '.')
+                                },
+                                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                                singleLine = true,
+                                colors = OutlinedTextFieldDefaults.colors(
+                                    focusedBorderColor = PrimaryEmerald,
+                                    unfocusedBorderColor = Color.Transparent,
+                                    focusedTextColor = TextMain,
+                                    unfocusedTextColor = TextMain
+                                ),
+                                modifier = Modifier.weight(1f).padding(horizontal = 8.dp)
+                            )
 
                             IconButton(
-                                onClick = { shares += 10 },
+                                onClick = {
+                                    val current = sharesText.toDoubleOrNull() ?: 0.0
+                                    val newShares = current + 1.0
+                                    sharesText = if (newShares % 1.0 == 0.0) "${newShares.toInt()}" else String.format("%.2f", newShares)
+                                },
                                 modifier = Modifier.size(36.dp).clip(RoundedCornerShape(8.dp)).background(SurfaceContainerHigh)
                             ) {
                                 Icon(imageVector = Icons.Default.Add, contentDescription = "Plus", tint = TextMain)
@@ -201,13 +226,14 @@ fun DemoBuyDialog(
                         // Allocation Quick Select Chips
                         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                             listOf(10, 25, 50, 100).forEach { pct ->
-                                val targetShares = Math.max(1, ((virtualCash * (pct / 100.0)) / stock.price).toInt())
+                                val targetShares = (virtualCash * (pct / 100.0)) / stock.price
+                                val chipText = if (targetShares % 1.0 == 0.0) "${targetShares.toInt()}" else String.format("%.2f", targetShares)
                                 Box(
                                     modifier = Modifier
                                         .weight(1f)
                                         .clip(RoundedCornerShape(6.dp))
                                         .background(SurfaceContainer)
-                                        .clickable { shares = targetShares }
+                                        .clickable { sharesText = chipText }
                                         .padding(vertical = 6.dp),
                                     contentAlignment = Alignment.Center
                                 ) {
@@ -311,11 +337,14 @@ fun DemoSellDialog(
     onDismiss: () -> Unit
 ) {
     var sellSharesPct by remember { mutableStateOf(100) }
-    val sharesToSell = Math.max(1, (position.shares * (sellSharesPct / 100.0)).toInt())
+    val sharesToSell = (position.shares * (sellSharesPct / 100.0)).coerceAtLeast(0.01)
     val grossValue = sharesToSell * position.currentPrice
     val costBasis = sharesToSell * position.avgBuyPrice
     val realizedPnL = grossValue - costBasis
     val pnlPct = if (costBasis > 0) (realizedPnL / costBasis) * 100 else 0.0
+
+    val positionSharesText = if (position.shares % 1.0 == 0.0) "${position.shares.toInt()}" else String.format("%.2f", position.shares)
+    val sellSharesText = if (sharesToSell % 1.0 == 0.0) "${sharesToSell.toInt()}" else String.format("%.2f", sharesToSell)
 
     Dialog(onDismissRequest = onDismiss) {
         Surface(
@@ -334,7 +363,7 @@ fun DemoSellDialog(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        StockLogoImage(ticker = position.ticker, size = 36.dp, fontSize = 16)
+                        StockLogoImage(ticker = position.ticker, logoUrl = position.logoUrl, size = 36.dp, fontSize = 16)
                         Column {
                             Row(verticalAlignment = Alignment.CenterVertically) {
                                 Text(text = position.ticker, color = TextMain, fontWeight = FontWeight.Bold, fontSize = 18.sp)
@@ -361,7 +390,7 @@ fun DemoSellDialog(
                 ) {
                     Column {
                         Text(text = "Posisi Aktif", color = TextMuted, fontSize = 10.sp)
-                        Text(text = "${position.shares} Lembar", color = TextMain, fontWeight = FontWeight.Bold, fontSize = 13.sp)
+                        Text(text = "$positionSharesText Lembar", color = TextMain, fontWeight = FontWeight.Bold, fontSize = 13.sp)
                     }
                     Column(horizontalAlignment = Alignment.End) {
                         Text(text = "Harga Pasar Real-time", color = TextMuted, fontSize = 10.sp)
@@ -371,7 +400,7 @@ fun DemoSellDialog(
 
                 // Volume Selector Buttons
                 Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                    Text(text = "Volume yang Ingin Dijual: $sharesToSell Lembar ($sellSharesPct%)", color = TextMain, fontWeight = FontWeight.SemiBold, fontSize = 12.sp)
+                    Text(text = "Volume yang Ingin Dijual: $sellSharesText Lembar ($sellSharesPct%)", color = TextMain, fontWeight = FontWeight.SemiBold, fontSize = 12.sp)
 
                     Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                         listOf(25, 50, 75, 100).forEach { pct ->

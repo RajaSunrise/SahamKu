@@ -15,11 +15,11 @@ class SQLiteRepositoryTest {
         assertTrue(repo.positions.value.isEmpty())
 
         val stock = Stock("TSLA", "Tesla", "NASDAQ", 200.0, 5.0, 2.5, 1e9, "1B")
-        val buyOk = repo.buyStock(stock, 10)
+        val buyOk = repo.buyStock(stock, 10.0)
         assertTrue(buyOk)
         assertEquals(100000.00 - 2000.0, repo.virtualCash.value, 0.01)
 
-        val sellOk = repo.sellStock("TSLA", 10)
+        val sellOk = repo.sellStock("TSLA", 10.0)
         assertTrue(sellOk)
     }
 }

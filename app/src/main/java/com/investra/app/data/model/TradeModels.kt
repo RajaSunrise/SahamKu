@@ -21,11 +21,12 @@ data class Position(
     val ticker: String,
     val name: String,
     val exchange: String,
-    val shares: Int,
+    val shares: Double,
     val avgBuyPrice: Double,
     val currentPrice: Double,
     val stopLoss: Double? = null,
-    val takeProfit: Double? = null
+    val takeProfit: Double? = null,
+    val logoUrl: String? = null
 ) {
     val totalInvestment: Double get() = shares * avgBuyPrice
     val currentMarketValue: Double get() = shares * currentPrice
@@ -39,19 +40,20 @@ data class TradeHistory(
     val name: String,
     val exchange: String,
     val type: String, // "BUY" or "SELL"
-    val shares: Int,
+    val shares: Double,
     val price: Double,
     val realizedPnL: Double = 0.0,
     val realizedPnLPercent: Double = 0.0,
     val dateText: String,
     val reasonText: String = "Jual Realisasi Breakout",
-    val isWin: Boolean = true
+    val isWin: Boolean = true,
+    val logoUrl: String? = null
 )
 
 data class CalculatorState(
     val ticker: String = "NVDA",
     val entryPrice: Double = 142.50,
-    val shares: Int = 100,
+    val shares: Double = 100.0,
     val targetPrice: Double = 162.00,
     val stopLossPrice: Double = 135.00
 ) {

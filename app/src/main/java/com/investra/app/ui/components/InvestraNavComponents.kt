@@ -53,20 +53,6 @@ fun InvestraHeader(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(10.dp)
         ) {
-            Box(
-                modifier = Modifier
-                    .size(32.dp)
-                    .clip(RoundedCornerShape(8.dp))
-                    .background(PrimaryContainer),
-                contentAlignment = Alignment.Center
-            ) {
-                Text(
-                    text = "S",
-                    color = Color.White,
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 18.sp
-                )
-            }
             Column {
                 Row(
                     verticalAlignment = Alignment.CenterVertically,

@@ -77,6 +77,14 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     private val _calculatorState = MutableStateFlow(CalculatorState())
     val calculatorState: StateFlow<CalculatorState> = _calculatorState.asStateFlow()
 
+    // Selected Stock Detail for Live Updating
+    private val _selectedStock = MutableStateFlow<Stock?>(null)
+    val selectedStock: StateFlow<Stock?> = _selectedStock.asStateFlow()
+
+    fun setSelectedStock(stock: Stock?) {
+        _selectedStock.value = stock
+    }
+
     // Screener State
     private val _screenerFilter = MutableStateFlow(ScreenerFilter())
     val screenerFilter: StateFlow<ScreenerFilter> = _screenerFilter.asStateFlow()
@@ -155,6 +163,20 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                         }
                         portfolioRepo.updatePositionPrices(priceMap)
                     }
+
+                    // 3. Update currently viewed stock detail live
+                    _selectedStock.value?.let { current ->
+                        val randomFactor = (Math.random() - 0.5) * 0.0024
+                        val newPrice = (current.price * (1.0 + randomFactor)).coerceAtLeast(0.01)
+                        val prevBase = current.price - current.change
+                        val diffAbs = newPrice - prevBase
+                        val newChangePct = if (prevBase > 0) (diffAbs / prevBase) * 100 else current.changePercent
+                        _selectedStock.value = current.copy(
+                            price = newPrice,
+                            change = diffAbs,
+                            changePercent = newChangePct
+                        )
+                    }
                 } catch (e: Exception) {
                     // Suppress and continue live loop
                 }
@@ -202,21 +224,23 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         showToast("Timeframe diubah ke $tf")
     }
 
-    fun executeBuy(stock: Stock, shares: Int, orderType: String = "Market Order", stopLoss: Double? = null, takeProfit: Double? = null): Boolean {
+    fun executeBuy(stock: Stock, shares: Double, orderType: String = "Market Order", stopLoss: Double? = null, takeProfit: Double? = null): Boolean {
         val success = portfolioRepo.buyStock(stock, shares, orderType, stopLoss, takeProfit)
         if (success) {
             val cost = stock.price * shares
-            showToast("Order simulasi $shares lot ${stock.ticker} ($${String.format("%.2f", cost)}) berhasil!")
+            val sharesFormatted = if (shares % 1.0 == 0.0) "${shares.toInt()}" else String.format("%.2f", shares)
+            showToast("Order simulasi $sharesFormatted lembar ${stock.ticker} ($${String.format("%.2f", cost)}) berhasil!")
         } else {
             showToast("Saldo kas virtual tidak mencukupi!")
         }
         return success
     }
 
-    fun executeSell(ticker: String, sharesToSell: Int): Boolean {
+    fun executeSell(ticker: String, sharesToSell: Double): Boolean {
         val success = portfolioRepo.sellStock(ticker, sharesToSell)
         if (success) {
-            showToast("Posisi $ticker $sharesToSell lembar berhasil direalisasikan!")
+            val sharesFormatted = if (sharesToSell % 1.0 == 0.0) "${sharesToSell.toInt()}" else String.format("%.2f", sharesToSell)
+            showToast("Posisi $ticker $sharesFormatted lembar berhasil direalisasikan!")
         } else {
             showToast("Gagal merealisasikan posisi!")
         }
@@ -235,7 +259,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         showToast("Portofolio di-reset ke $${String.format("%,.2f", newCapital)} USD")
     }
 
-    fun updateCalculator(entryPrice: Double, shares: Int, targetPrice: Double, stopLossPrice: Double, ticker: String = "NVDA") {
+    fun updateCalculator(entryPrice: Double, shares: Double, targetPrice: Double, stopLossPrice: Double, ticker: String = "NVDA") {
         _calculatorState.value = CalculatorState(
             ticker = ticker,
             entryPrice = entryPrice,

@@ -380,6 +380,9 @@ fun AnalyticsCard(title: String, value: String, sub: String, isPositive: Boolean
 
 @Composable
 fun TradeHistoryCardItem(trade: TradeHistory, logoUrl: String? = null) {
+    val effectiveLogoUrl = trade.logoUrl ?: logoUrl
+    val sharesText = if (trade.shares % 1.0 == 0.0) "${trade.shares.toInt()}" else String.format("%.2f", trade.shares)
+
     Card(
         colors = CardDefaults.cardColors(containerColor = SurfaceContainer),
         shape = RoundedCornerShape(12.dp),
@@ -392,14 +395,14 @@ fun TradeHistoryCardItem(trade: TradeHistory, logoUrl: String? = null) {
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    StockLogoImage(ticker = trade.ticker, logoUrl = logoUrl, size = 36.dp, fontSize = 14)
+                    StockLogoImage(ticker = trade.ticker, logoUrl = effectiveLogoUrl, size = 36.dp, fontSize = 14)
                     Column {
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Text(text = trade.ticker, color = TextMain, fontWeight = FontWeight.Bold, fontSize = 14.sp)
                             Spacer(modifier = Modifier.width(4.dp))
                             Text(text = trade.exchange, color = TextMuted, fontSize = 9.sp)
                         }
-                        Text(text = "${trade.shares} lembar • ${trade.reasonText}", color = TextMuted, fontSize = 10.sp)
+                        Text(text = "$sharesText lembar • ${trade.reasonText}", color = TextMuted, fontSize = 10.sp)
                     }
                 }
 

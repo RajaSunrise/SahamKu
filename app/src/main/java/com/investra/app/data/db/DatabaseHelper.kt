@@ -36,11 +36,12 @@ class DatabaseHelper(context: Context) : SQLiteOpenHelper(context, DATABASE_NAME
                 ticker TEXT PRIMARY KEY,
                 name TEXT NOT NULL,
                 exchange TEXT NOT NULL,
-                shares INTEGER NOT NULL,
+                shares REAL NOT NULL,
                 avg_buy_price REAL NOT NULL,
                 current_price REAL NOT NULL,
                 stop_loss REAL,
-                take_profit REAL
+                take_profit REAL,
+                logo_url TEXT
             )
             """.trimIndent()
         )
@@ -53,13 +54,14 @@ class DatabaseHelper(context: Context) : SQLiteOpenHelper(context, DATABASE_NAME
                 name TEXT NOT NULL,
                 exchange TEXT NOT NULL,
                 type TEXT NOT NULL,
-                shares INTEGER NOT NULL,
+                shares REAL NOT NULL,
                 price REAL NOT NULL,
                 realized_pnl REAL NOT NULL,
                 realized_pnl_percent REAL NOT NULL,
                 date_text TEXT NOT NULL,
                 reason_text TEXT NOT NULL,
-                is_win INTEGER NOT NULL
+                is_win INTEGER NOT NULL,
+                logo_url TEXT
             )
             """.trimIndent()
         )
@@ -131,23 +133,45 @@ class DatabaseHelper(context: Context) : SQLiteOpenHelper(context, DATABASE_NAME
 
     fun getPositions(): List<Position> {
         val db = readableDatabase
-        val cursor = db.rawQuery("SELECT ticker, name, exchange, shares, avg_buy_price, current_price, stop_loss, take_profit FROM $TABLE_POSITIONS", null)
         val list = mutableListOf<Position>()
-        while (cursor.moveToNext()) {
-            list.add(
-                Position(
-                    ticker = cursor.getString(0),
-                    name = cursor.getString(1),
-                    exchange = cursor.getString(2),
-                    shares = cursor.getInt(3),
-                    avgBuyPrice = cursor.getDouble(4),
-                    currentPrice = cursor.getDouble(5),
-                    stopLoss = if (cursor.isNull(6)) null else cursor.getDouble(6),
-                    takeProfit = if (cursor.isNull(7)) null else cursor.getDouble(7)
+        try {
+            val cursor = db.rawQuery("SELECT ticker, name, exchange, shares, avg_buy_price, current_price, stop_loss, take_profit, logo_url FROM $TABLE_POSITIONS", null)
+            while (cursor.moveToNext()) {
+                list.add(
+                    Position(
+                        ticker = cursor.getString(0),
+                        name = cursor.getString(1),
+                        exchange = cursor.getString(2),
+                        shares = cursor.getDouble(3),
+                        avgBuyPrice = cursor.getDouble(4),
+                        currentPrice = cursor.getDouble(5),
+                        stopLoss = if (cursor.isNull(6)) null else cursor.getDouble(6),
+                        takeProfit = if (cursor.isNull(7)) null else cursor.getDouble(7),
+                        logoUrl = if (cursor.isNull(8)) null else cursor.getString(8)
+                    )
                 )
-            )
+            }
+            cursor.close()
+        } catch (e: Exception) {
+            // Fallback for older schema if needed
+            val cursor = db.rawQuery("SELECT ticker, name, exchange, shares, avg_buy_price, current_price, stop_loss, take_profit FROM $TABLE_POSITIONS", null)
+            while (cursor.moveToNext()) {
+                list.add(
+                    Position(
+                        ticker = cursor.getString(0),
+                        name = cursor.getString(1),
+                        exchange = cursor.getString(2),
+                        shares = cursor.getDouble(3),
+                        avgBuyPrice = cursor.getDouble(4),
+                        currentPrice = cursor.getDouble(5),
+                        stopLoss = if (cursor.isNull(6)) null else cursor.getDouble(6),
+                        takeProfit = if (cursor.isNull(7)) null else cursor.getDouble(7),
+                        logoUrl = null
+                    )
+                )
+            }
+            cursor.close()
         }
-        cursor.close()
         return list
     }
 
@@ -162,6 +186,7 @@ class DatabaseHelper(context: Context) : SQLiteOpenHelper(context, DATABASE_NAME
             put("current_price", position.currentPrice)
             put("stop_loss", position.stopLoss)
             put("take_profit", position.takeProfit)
+            put("logo_url", position.logoUrl)
         }
         db.insertWithOnConflict(TABLE_POSITIONS, null, cv, SQLiteDatabase.CONFLICT_REPLACE)
     }
@@ -197,27 +222,52 @@ class DatabaseHelper(context: Context) : SQLiteOpenHelper(context, DATABASE_NAME
 
     fun getTradeHistory(): List<TradeHistory> {
         val db = readableDatabase
-        val cursor = db.rawQuery("SELECT id, ticker, name, exchange, type, shares, price, realized_pnl, realized_pnl_percent, date_text, reason_text, is_win FROM $TABLE_TRADE_HISTORY", null)
         val list = mutableListOf<TradeHistory>()
-        while (cursor.moveToNext()) {
-            list.add(
-                TradeHistory(
-                    id = cursor.getString(0),
-                    ticker = cursor.getString(1),
-                    name = cursor.getString(2),
-                    exchange = cursor.getString(3),
-                    type = cursor.getString(4),
-                    shares = cursor.getInt(5),
-                    price = cursor.getDouble(6),
-                    realizedPnL = cursor.getDouble(7),
-                    realizedPnLPercent = cursor.getDouble(8),
-                    dateText = cursor.getString(9),
-                    reasonText = cursor.getString(10),
-                    isWin = cursor.getInt(11) == 1
+        try {
+            val cursor = db.rawQuery("SELECT id, ticker, name, exchange, type, shares, price, realized_pnl, realized_pnl_percent, date_text, reason_text, is_win, logo_url FROM $TABLE_TRADE_HISTORY", null)
+            while (cursor.moveToNext()) {
+                list.add(
+                    TradeHistory(
+                        id = cursor.getString(0),
+                        ticker = cursor.getString(1),
+                        name = cursor.getString(2),
+                        exchange = cursor.getString(3),
+                        type = cursor.getString(4),
+                        shares = cursor.getDouble(5),
+                        price = cursor.getDouble(6),
+                        realizedPnL = cursor.getDouble(7),
+                        realizedPnLPercent = cursor.getDouble(8),
+                        dateText = cursor.getString(9),
+                        reasonText = cursor.getString(10),
+                        isWin = cursor.getInt(11) == 1,
+                        logoUrl = if (cursor.isNull(12)) null else cursor.getString(12)
+                    )
                 )
-            )
+            }
+            cursor.close()
+        } catch (e: Exception) {
+            val cursor = db.rawQuery("SELECT id, ticker, name, exchange, type, shares, price, realized_pnl, realized_pnl_percent, date_text, reason_text, is_win FROM $TABLE_TRADE_HISTORY", null)
+            while (cursor.moveToNext()) {
+                list.add(
+                    TradeHistory(
+                        id = cursor.getString(0),
+                        ticker = cursor.getString(1),
+                        name = cursor.getString(2),
+                        exchange = cursor.getString(3),
+                        type = cursor.getString(4),
+                        shares = cursor.getDouble(5),
+                        price = cursor.getDouble(6),
+                        realizedPnL = cursor.getDouble(7),
+                        realizedPnLPercent = cursor.getDouble(8),
+                        dateText = cursor.getString(9),
+                        reasonText = cursor.getString(10),
+                        isWin = cursor.getInt(11) == 1,
+                        logoUrl = null
+                    )
+                )
+            }
+            cursor.close()
         }
-        cursor.close()
         return list
     }
 
@@ -236,6 +286,7 @@ class DatabaseHelper(context: Context) : SQLiteOpenHelper(context, DATABASE_NAME
             put("date_text", history.dateText)
             put("reason_text", history.reasonText)
             put("is_win", if (history.isWin) 1 else 0)
+            put("logo_url", history.logoUrl)
         }
         db.insertWithOnConflict(TABLE_TRADE_HISTORY, null, cv, SQLiteDatabase.CONFLICT_REPLACE)
     }
