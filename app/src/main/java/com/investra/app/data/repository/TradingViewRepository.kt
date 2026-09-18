@@ -359,23 +359,29 @@ class TradingViewRepository {
         )
     }
 
+    // Gotrade Top Movers symbols featured on Gotrade US stock page (https://www.heygotrade.com/en/us-stock/)
+    val gotradeTopMoversTickers = listOf("QQQ", "NFLX", "NVDA", "AAPL", "META", "GOOGL", "SPOT", "SBUX", "MSFT")
+
     fun getFallbackStocks(category: String = "gainers"): List<Stock> {
         val list = when (category) {
             "gainers" -> listOf(
-                Stock("NVDA", "NVIDIA Corporation", "NASDAQ", 142.50, 7.32, 5.42, 14200000000.0, "14.2B", 0.85, "STRONG BUY", 62.4, "Bullish Crossover", 138.45, 132.80, "Semikonduktor AI", "Technology", 3.5e12, "Catalyst: AI Chip Surge", 136.0, 145.0, 152.0, 160.0, 136.0, logoUrl = "https://s3-symbol-logo.tradingview.com/nvidia.svg"),
-                Stock("TSLA", "Tesla, Inc.", "NASDAQ", 224.80, 10.40, 4.85, 9800000000.0, "9.8B", 0.72, "BUY", 58.5, "Bullish Crossover", 218.00, 205.50, "Automotive Tech", "Consumer Cyclical", 7.2e11, "Breakout MA-20 Bullish", 212.0, 230.0, 240.0, 255.0, 210.0, logoUrl = "https://s3-symbol-logo.tradingview.com/tesla.svg"),
-                Stock("PLTR", "Palantir Technologies", "NYSE", 44.10, 2.54, 6.12, 3500000000.0, "3.5B", 0.90, "STRONG BUY", 68.2, "Bullish Continuation", 41.50, 38.20, "AI Data Analytics", "Technology", 9.8e10, "S&P 500 Inklusi Rally", 41.0, 45.0, 48.0, 52.0, 40.0, logoUrl = "https://s3-symbol-logo.tradingview.com/palantir.svg"),
-                Stock("AMD", "Advanced Micro Devices", "NASDAQ", 158.30, 5.72, 3.75, 2900000000.0, "2.9B", 0.65, "BUY", 55.4, "Golden Cross EMA", 152.00, 146.00, "Semiconductor Tech", "Technology", 2.5e11, "Peningkatan Target Harga Analis", 150.0, 162.0, 170.0, 180.0, 148.0, logoUrl = "https://s3-symbol-logo.tradingview.com/advanced-micro-devices.svg")
+                Stock("NVDA", "NVIDIA Corporation", "NASDAQ", 142.50, 7.32, 5.42, 14200000000.0, "14.2B", 0.85, "STRONG BUY", 62.4, "Bullish Crossover", 138.45, 132.80, "Semikonduktor AI", "Technology", 3.5e12, "Gotrade Top Mover", 136.0, 145.0, 152.0, 160.0, 136.0, logoUrl = "https://s3-symbol-logo.tradingview.com/nvidia.svg"),
+                Stock("NFLX", "Netflix, Inc.", "NASDAQ", 702.40, 24.80, 3.66, 8500000000.0, "8.5B", 0.81, "STRONG BUY", 64.2, "Bullish Trend", 685.00, 660.00, "Streaming Media", "Communication", 3.0e11, "Gotrade Top Mover", 680.0, 715.0, 740.0, 770.0, 675.0, logoUrl = "https://s3-symbol-logo.tradingview.com/netflix.svg"),
+                Stock("AAPL", "Apple Inc.", "NASDAQ", 232.50, 2.71, 1.18, 18500000000.0, "18.5B", 0.82, "STRONG BUY", 58.2, "Golden Cross", 228.00, 220.00, "Consumer Electronics", "Technology", 3.5e12, "Gotrade Top Mover", 226.0, 235.0, 248.0, 260.0, 226.0, logoUrl = "https://s3-symbol-logo.tradingview.com/apple.svg"),
+                Stock("META", "Meta Platforms, Inc.", "NASDAQ", 580.20, 12.50, 2.20, 11000000000.0, "11.0B", 0.78, "BUY", 61.5, "Bullish Continuation", 565.00, 540.00, "Social Media", "Communication", 1.4e12, "Gotrade Top Mover", 560.0, 595.0, 620.0, 650.0, 555.0, logoUrl = "https://s3-symbol-logo.tradingview.com/meta-platforms.svg"),
+                Stock("QQQ", "Invesco QQQ Trust", "NASDAQ", 492.30, 4.10, 0.84, 32000000000.0, "32.0B", 0.75, "BUY", 57.8, "Bullish Trend", 485.00, 470.00, "Index ETF", "Financials", 2.8e11, "Gotrade Top Mover", 486.0, 498.0, 510.0, 525.0, 482.0, logoUrl = "https://s3-symbol-logo.tradingview.com/invesco.svg")
             )
             "losers" -> listOf(
+                Stock("SBUX", "Starbucks Corp", "NASDAQ", 94.20, -2.10, -2.18, 4500000000.0, "4.5B", -0.25, "SELL", 41.5, "Bearish Momentum", 96.00, 98.50, "Restaurants", "Consumer Cyclical", 1.1e11, "Gotrade Top Mover", 92.0, 96.0, 100.0, 105.0, 91.0, logoUrl = "https://s3-symbol-logo.tradingview.com/starbucks.svg"),
+                Stock("SPOT", "Spotify Technology S.A.", "NYSE", 365.40, -5.80, -1.56, 3200000000.0, "3.2B", -0.15, "NEUTRAL", 44.2, "Consolidation", 372.00, 385.00, "Audio Streaming", "Communication", 7.2e10, "Gotrade Top Mover", 355.0, 375.0, 390.0, 410.0, 350.0, logoUrl = "https://s3-symbol-logo.tradingview.com/spotify.svg"),
                 Stock("INTC", "Intel Corp", "NASDAQ", 22.10, -0.78, -3.40, 1800000000.0, "1.8B", -0.42, "SELL", 38.2, "Bearish Momentum", 23.50, 25.10, "Semiconductors", "Technology", 9.4e10, "Oversold Test", 21.5, 23.0, 24.5, 26.0, 21.0, logoUrl = "https://s3-symbol-logo.tradingview.com/intel.svg"),
                 Stock("NKE", "Nike, Inc.", "NYSE", 82.40, -1.81, -2.15, 12000000000.0, "1.2B", -0.20, "NEUTRAL", 42.1, "Consolidation", 84.50, 88.00, "Apparel Footwear", "Consumer Cyclical", 1.2e11, "Support Re-Test", 80.0, 85.0, 89.0, 95.0, 78.0, logoUrl = "https://s3-symbol-logo.tradingview.com/nike.svg")
             )
             "active" -> listOf(
-                Stock("SPY", "SPDR S&P 500 ETF Trust", "AMEX", 575.50, 3.45, 0.60, 45000000000.0, "45.0B", 0.80, "STRONG BUY", 56.4, "Bullish Trend", 568.00, 555.00, "Index ETF", "Financials", 5.5e11, "S&P 500 Benchmark Momentum", 570.0, 582.0, 595.0, 610.0, 565.0, logoUrl = "https://s3-symbol-logo.tradingview.com/spdr-sandp500-etf-tr.svg"),
-                Stock("AAPL", "Apple Inc.", "NASDAQ", 232.50, 2.71, 1.18, 18500000000.0, "18.5B", 0.82, "STRONG BUY", 58.2, "Golden Cross", 228.00, 220.00, "Consumer Electronics", "Technology", 3.5e12, "Daily Swing Pick", 226.0, 235.0, 248.0, 260.0, 226.0, logoUrl = "https://s3-symbol-logo.tradingview.com/apple.svg"),
-                Stock("MSFT", "Microsoft Corp", "NASDAQ", 448.20, 8.20, 1.86, 12400000000.0, "12.4B", 0.78, "BUY", 54.0, "Ascending Triangle", 438.00, 425.00, "Software Cloud", "Technology", 3.3e12, "Volume melonjak +22%", 439.0, 455.0, 471.5, 490.0, 435.0, logoUrl = "https://s3-symbol-logo.tradingview.com/microsoft.svg"),
-                Stock("AMZN", "Amazon.com Inc", "NASDAQ", 186.40, 3.20, 1.75, 10200000000.0, "10.2B", 0.75, "BUY", 56.8, "Cup & Handle Pattern", 182.00, 178.00, "E-Commerce Cloud", "Consumer Cyclical", 1.9e12, "Rebound dari Support EMA 50", 181.0, 192.0, 202.0, 215.0, 178.0, logoUrl = "https://s3-symbol-logo.tradingview.com/amazon.svg")
+                Stock("NVDA", "NVIDIA Corporation", "NASDAQ", 142.50, 7.32, 5.42, 14200000000.0, "14.2B", 0.85, "STRONG BUY", 62.4, "Bullish Crossover", 138.45, 132.80, "Semikonduktor AI", "Technology", 3.5e12, "Gotrade Top Mover", 136.0, 145.0, 152.0, 160.0, 136.0, logoUrl = "https://s3-symbol-logo.tradingview.com/nvidia.svg"),
+                Stock("AAPL", "Apple Inc.", "NASDAQ", 232.50, 2.71, 1.18, 18500000000.0, "18.5B", 0.82, "STRONG BUY", 58.2, "Golden Cross", 228.00, 220.00, "Consumer Electronics", "Technology", 3.5e12, "Gotrade Top Mover", 226.0, 235.0, 248.0, 260.0, 226.0, logoUrl = "https://s3-symbol-logo.tradingview.com/apple.svg"),
+                Stock("MSFT", "Microsoft Corp", "NASDAQ", 448.20, 8.20, 1.86, 12400000000.0, "12.4B", 0.78, "BUY", 54.0, "Ascending Triangle", 438.00, 425.00, "Software Cloud", "Technology", 3.3e12, "Gotrade Top Mover", 439.0, 455.0, 471.5, 490.0, 435.0, logoUrl = "https://s3-symbol-logo.tradingview.com/microsoft.svg"),
+                Stock("GOOGL", "Alphabet Inc", "NASDAQ", 165.10, 2.10, 1.29, 8800000000.0, "8.8B", 0.68, "BUY", 48.5, "Fib 61.8% Bounce", 162.00, 158.00, "Internet Media", "Communication", 2.0e12, "Gotrade Top Mover", 161.5, 168.0, 173.2, 182.0, 161.5, logoUrl = "https://s3-symbol-logo.tradingview.com/alphabet.svg")
             )
             else -> getFallbackStocks("gainers")
         }

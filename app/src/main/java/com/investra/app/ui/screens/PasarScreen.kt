@@ -68,10 +68,10 @@ fun PasarScreen(
     val activeStocks by viewModel.activeStocks.collectAsState()
 
     val displayStocks = when (selectedTab) {
-        "losers" -> losers
+        "losers" -> losers.filter { it.changePercent < 0 }.ifEmpty { losers }
         "active" -> activeStocks
         "unusual" -> activeStocks
-        else -> gainers
+        else -> gainers.filter { it.changePercent >= 0 }.ifEmpty { gainers }
     }
 
     LazyColumn(
@@ -213,7 +213,7 @@ fun PasarScreen(
             }
         }
 
-        // Radar Pasar AS Category Tabs
+        // Gotrade Top Movers Category Tabs
         item {
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 Row(
@@ -222,14 +222,15 @@ fun PasarScreen(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text(
-                        text = "Radar Pasar AS (> $5B Valuation)",
+                        text = "Gotrade Top Movers (> $5B)",
                         color = TextMain,
                         fontWeight = FontWeight.Bold,
                         fontSize = 16.sp
                     )
                     Text(
-                        text = "TradingView Real-Time",
-                        color = TextMuted,
+                        text = "Gotrade Real-Time Feed",
+                        color = PrimaryEmerald,
+                        fontWeight = FontWeight.SemiBold,
                         fontSize = 11.sp
                     )
                 }

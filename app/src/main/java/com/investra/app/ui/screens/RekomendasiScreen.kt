@@ -267,12 +267,13 @@ fun RekomendasiScreen(
                                 Text(text = "${if (aaplStock.changePercent >= 0) "+" else ""}${String.format("%.2f", aaplStock.changePercent)}%", color = PrimaryEmerald, fontSize = 11.sp)
                             }
                         }
+                        val potentialPct = if (aaplStock.price > 0) ((aaplStock.targetPrice1 - aaplStock.price) / aaplStock.price) * 100 else 6.67
                         Column(horizontalAlignment = Alignment.End) {
                             Text(text = "TARGET KENAIKAN", color = TextMuted, fontSize = 10.sp, fontWeight = FontWeight.SemiBold)
                             Row(verticalAlignment = Alignment.Bottom) {
                                 Text(text = "$${String.format("%.2f", aaplStock.targetPrice1)}", color = PrimaryEmerald, fontWeight = FontWeight.Bold, fontSize = 16.sp)
                                 Spacer(modifier = Modifier.width(4.dp))
-                                Text(text = "(+6.67%)", color = PrimaryEmerald, fontSize = 11.sp, fontWeight = FontWeight.SemiBold)
+                                Text(text = "(+${String.format("%.2f", potentialPct)}%)", color = PrimaryEmerald, fontSize = 11.sp, fontWeight = FontWeight.SemiBold)
                             }
                         }
                     }
@@ -412,6 +413,14 @@ fun RekomendasiScreen(
                         }
                     }
 
+                    val rsiStatusText = when {
+                        stock.rsi >= 70.0 -> "Overbought"
+                        stock.rsi <= 30.0 -> "Oversold"
+                        stock.rsi >= 55.0 -> "Bullish"
+                        else -> "Netral"
+                    }
+                    val targetPct = if (stock.price > 0) ((stock.targetPrice1 - stock.price) / stock.price) * 100 else 5.20
+
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -426,11 +435,11 @@ fun RekomendasiScreen(
                         }
                         Column(horizontalAlignment = Alignment.CenterHorizontally) {
                             Text(text = "Kekuatan RSI", color = TextMuted, fontSize = 10.sp)
-                            Text(text = "${stock.rsi.toInt()} (Netral)", color = PrimaryEmerald, fontWeight = FontWeight.SemiBold, fontSize = 12.sp)
+                            Text(text = "${stock.rsi.toInt()} ($rsiStatusText)", color = PrimaryEmerald, fontWeight = FontWeight.SemiBold, fontSize = 12.sp)
                         }
                         Column(horizontalAlignment = Alignment.End) {
                             Text(text = "Target Profit", color = TextMuted, fontSize = 10.sp)
-                            Text(text = "+5.20%", color = PrimaryEmerald, fontWeight = FontWeight.Bold, fontSize = 12.sp)
+                            Text(text = "+${String.format("%.2f", targetPct)}%", color = PrimaryEmerald, fontWeight = FontWeight.Bold, fontSize = 12.sp)
                         }
                     }
 

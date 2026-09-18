@@ -126,11 +126,12 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                         _activeStocks.value = tradingViewRepo.getFallbackStocks("active")
                     }
 
-                    // 2. Fetch real-time quotes for portfolio positions, watchlist & currently selected stock
+                    // 2. Fetch real-time quotes for portfolio positions, watchlist, Gotrade top movers & currently selected stock
                     val posTickers = positions.value.map { it.ticker }
                     val watchTickers = watchlist.value.toList()
+                    val gotradeTickers = tradingViewRepo.gotradeTopMoversTickers
                     val selectedTicker = _selectedStock.value?.ticker
-                    val allTickers = (posTickers + watchTickers + listOfNotNull(selectedTicker)).distinct()
+                    val allTickers = (posTickers + watchTickers + gotradeTickers + listOfNotNull(selectedTicker)).distinct()
 
                     if (allTickers.isNotEmpty()) {
                         val quotesRes = tradingViewRepo.fetchStockQuotes(allTickers)
