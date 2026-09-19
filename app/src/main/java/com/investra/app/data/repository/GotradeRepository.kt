@@ -662,9 +662,9 @@ class GotradeRepository {
         }
 
         if (filtered.isEmpty()) {
-            return allStocks.filter { it.marketCap >= 5_000_000_000.0 }
+            return allStocks
         }
 
-        return filtered.filter { it.marketCap >= 5_000_000_000.0 }
+        return filtered
     }
 }
