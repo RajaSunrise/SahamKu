@@ -6,9 +6,9 @@ import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
-class TradingViewRepositoryTest {
+class GotradeRepositoryTest {
 
-    private val repository = TradingViewRepository()
+    private val repository = GotradeRepository()
 
     @Test
     fun testFallbackStockData() {

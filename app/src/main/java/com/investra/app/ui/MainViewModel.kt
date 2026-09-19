@@ -10,8 +10,8 @@ import com.investra.app.data.model.ScreenerFilter
 import com.investra.app.data.model.Stock
 import com.investra.app.data.model.TradeHistory
 import android.content.Context
+import com.investra.app.data.repository.GotradeRepository
 import com.investra.app.data.repository.PortfolioRepository
-import com.investra.app.data.repository.TradingViewRepository
 import com.investra.app.ui.theme.AppThemeMode
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
@@ -24,7 +24,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
     private val prefs = application.getSharedPreferences("sahamku_prefs", Context.MODE_PRIVATE)
     private val dbHelper = DatabaseHelper(application)
-    private val tradingViewRepo = TradingViewRepository()
+    private val gotradeRepo = GotradeRepository()
     private val portfolioRepo = PortfolioRepository(dbHelper)
 
     // Theme Mode State
@@ -104,37 +104,37 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         liveUpdateJob = viewModelScope.launch {
             while (true) {
                 try {
-                    // 1. Fetch top gainers (20) & losers (20) & active directly from TradingView
-                    val gainersRes = tradingViewRepo.fetchStockScanner("gainers", 20)
+                    // 1. Fetch top gainers (20) & losers (20) & active directly from Gotrade Repository
+                    val gainersRes = gotradeRepo.fetchStockScanner("gainers", 20)
                     if (gainersRes.isSuccess && gainersRes.getOrNull()?.isNotEmpty() == true) {
                         _gainers.value = gainersRes.getOrNull()!!
                     } else if (_gainers.value.isEmpty()) {
-                        _gainers.value = tradingViewRepo.getFallbackStocks("gainers")
+                        _gainers.value = gotradeRepo.getFallbackStocks("gainers")
                     }
 
-                    val losersRes = tradingViewRepo.fetchStockScanner("losers", 20)
+                    val losersRes = gotradeRepo.fetchStockScanner("losers", 20)
                     if (losersRes.isSuccess && losersRes.getOrNull()?.isNotEmpty() == true) {
                         _losers.value = losersRes.getOrNull()!!
                     } else if (_losers.value.isEmpty()) {
-                        _losers.value = tradingViewRepo.getFallbackStocks("losers")
+                        _losers.value = gotradeRepo.getFallbackStocks("losers")
                     }
 
-                    val activeRes = tradingViewRepo.fetchStockScanner("active", 20)
+                    val activeRes = gotradeRepo.fetchStockScanner("active", 20)
                     if (activeRes.isSuccess && activeRes.getOrNull()?.isNotEmpty() == true) {
                         _activeStocks.value = activeRes.getOrNull()!!
                     } else if (_activeStocks.value.isEmpty()) {
-                        _activeStocks.value = tradingViewRepo.getFallbackStocks("active")
+                        _activeStocks.value = gotradeRepo.getFallbackStocks("active")
                     }
 
                     // 2. Fetch real-time quotes for portfolio positions, watchlist, Gotrade top movers & currently selected stock
                     val posTickers = positions.value.map { it.ticker }
                     val watchTickers = watchlist.value.toList()
-                    val gotradeTickers = tradingViewRepo.gotradeTopMoversTickers
+                    val gotradeTickers = gotradeRepo.gotradeTopMoversTickers
                     val selectedTicker = _selectedStock.value?.ticker
                     val allTickers = (posTickers + watchTickers + gotradeTickers + listOfNotNull(selectedTicker)).distinct()
 
                     if (allTickers.isNotEmpty()) {
-                        val quotesRes = tradingViewRepo.fetchStockQuotes(allTickers)
+                        val quotesRes = gotradeRepo.fetchStockQuotes(allTickers)
                         val quoteMap = quotesRes.getOrDefault(emptyMap())
 
                         val priceMap = mutableMapOf<String, Double>()
@@ -146,7 +146,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                             portfolioRepo.updatePositionPrices(priceMap)
                         }
 
-                        // Update currently viewed stock detail with real TradingView stock quote
+                        // Update currently viewed stock detail with real Gotrade stock quote
                         selectedTicker?.let { ticker ->
                             quoteMap[ticker]?.let { updatedStock ->
                                 _selectedStock.value = updatedStock
@@ -157,7 +157,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                     // Suppress and continue live loop
                 }
 
-                delay(3000) // Fast 3-second interval for accurate real-time updates
+                delay(500) // Fast 500ms millisecond-level realtime price stream interval
             }
         }
     }
@@ -179,7 +179,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         searchJob = viewModelScope.launch {
             _isSearching.value = true
             delay(300) // Debounce
-            val result = tradingViewRepo.searchStocks(query, 15)
+            val result = gotradeRepo.searchStocks(query, 15)
             _searchResults.value = result.getOrDefault(emptyList())
             _isSearching.value = false
         }

@@ -554,7 +554,7 @@ fun StockDetailScreen(
                             Column {
                                 Text(text = "KONSENSUS TEKNIKAL AI", color = TextMuted, fontSize = 10.sp, fontWeight = FontWeight.Bold)
                                 Text(text = activeStock.recommendationText, color = TextMain, fontWeight = FontWeight.Bold, fontSize = 20.sp)
-                                Text(text = "Dihitung dari TradingView scanner", color = TextMuted, fontSize = 11.sp)
+                                Text(text = "Dihitung dari Gotrade Realtime Engine", color = TextMuted, fontSize = 11.sp)
                             }
                             Box(
                                 modifier = Modifier
