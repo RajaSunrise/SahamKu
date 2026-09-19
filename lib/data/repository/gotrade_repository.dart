@@ -1,6 +1,5 @@
 import 'dart:async';
 import 'dart:convert';
-import 'dart:math';
 import 'package:http/http.dart' as http;
 import 'package:html/parser.dart' as html_parser;
 import 'package:sahamku/data/model/stock.dart';
@@ -609,7 +608,7 @@ class GotradeRepository {
       }
     } catch (_) {}
 
-    return _getLiveUpdatedStock(upperTicker);
+    return _stockDatabase[upperTicker];
   }
 
   Future<List<Stock>> fetchStockScanner({
@@ -664,36 +663,6 @@ class GotradeRepository {
     return result.take(limit).toList();
   }
 
-  Stock? _getLiveUpdatedStock(String ticker) {
-    final baseStock = _stockDatabase[ticker];
-    if (baseStock == null) return null;
-
-    final nowMs = DateTime.now().millisecondsSinceEpoch;
-    final wave = sin(nowMs / 1200.0) * 0.0012;
-    final randomJitter = (Random().nextDouble() - 0.5) * 0.0008;
-
-    final livePrice = baseStock.price * (1.0 + wave + randomJitter);
-    final deltaPrice = livePrice - (baseStock.price - baseStock.change);
-    final deltaPercent = (baseStock.price != 0)
-        ? (deltaPrice / (baseStock.price - baseStock.change)) * 100.0
-        : baseStock.changePercent;
-
-    final newSparkline = List<double>.from(baseStock.sparklinePoints);
-    if (newSparkline.isNotEmpty) {
-      newSparkline[newSparkline.length - 1] = livePrice;
-    }
-
-    final updated = baseStock.copyWith(
-      price: (livePrice * 100).round() / 100.0,
-      change: (deltaPrice * 100).round() / 100.0,
-      changePercent: (deltaPercent * 100).round() / 100.0,
-      sparklinePoints: newSparkline,
-    );
-
-    _stockDatabase[ticker] = updated;
-    return updated;
-  }
-
   List<double> _generateSparkline(double close, double changePct) {
     final delta = close * (changePct / 100.0) / 7.0;
     return [
@@ -732,7 +701,7 @@ class GotradeRepository {
   }
 
   List<Stock> getFallbackStocks(String category) {
-    final allStocks = _stockDatabase.values.map((s) => _getLiveUpdatedStock(s.ticker) ?? s).toList();
+    final allStocks = _stockDatabase.values.toList();
     if (category == "gainers") {
       return allStocks.where((s) => s.changePercent >= 0).toList()
         ..sort((a, b) => b.changePercent.compareTo(a.changePercent));

@@ -20,6 +20,12 @@ void main() {
       expect(stock.price, greaterThan(0.0));
     });
 
+    test('scrapeGotradeData scrapes Gotrade web page for real stock tickers', () async {
+      final stocks = await repository.scrapeGotradeData();
+      expect(stocks.isNotEmpty, isTrue);
+      expect(stocks.first.price, greaterThan(0.0));
+    });
+
     test('searchStocks finds matching stocks', () async {
       final results = await repository.searchStocks('AAPL');
       expect(results.isNotEmpty, isTrue);
