@@ -67,11 +67,11 @@ fun ScreenerScreen(
     val presets = listOf("Breakout 52W High", "RSI Oversold (<30)", "Golden Cross EMA", "Volume Spike >2x", "MACD Reversal")
 
     val screenResults = listOf(
-        Stock("AVGO", "Broadcom Inc.", "NASDAQ", 182.40, 7.18, 4.10, 5200000000.0, "5.2B", 0.92, "STRONG BREAKOUT", 64.0, "Breakout All-Time High", 175.0, 168.0, "Semiconductors", "Technology", 8.5e11, "Catalyst: AI Custom Chips", 178.0, 185.0, 198.0, 210.0, 175.0, logoUrl = "https://s3-symbol-logo.tradingview.com/broadcom.svg"),
-        Stock("QCOM", "Qualcomm Inc.", "NASDAQ", 169.20, 5.24, 3.20, 3800000000.0, "3.8B", 0.82, "GOLDEN CROSS", 58.0, "EMA 20/50 Cross", 162.0, 155.0, "Wireless Tech", "Technology", 1.8e11, "Support dinamis MA200 mantul", 165.0, 175.0, 184.0, 195.0, 162.0, logoUrl = "https://s3-symbol-logo.tradingview.com/qualcomm.svg"),
-        Stock("CRM", "Salesforce Inc.", "NYSE", 288.50, 7.72, 2.75, 4100000000.0, "4.1B", 0.80, "BULL FLAG", 61.0, "Consolidation Breakout", 280.0, 272.0, "Cloud Software", "Technology", 2.8e11, "Saluran konsolidasi 14 hari", 282.0, 295.0, 304.0, 320.0, 278.0, logoUrl = "https://s3-symbol-logo.tradingview.com/salesforce.svg"),
-        Stock("META", "Meta Platforms Inc.", "NASDAQ", 588.00, 10.96, 1.90, 8900000000.0, "8.9B", 0.88, "TREND STRONG", 65.0, "Higher High Momentum", 570.0, 550.0, "Interactive Media", "Communication", 1.5e12, "Histogram MACD melebar", 575.0, 600.0, 620.0, 650.0, 568.0, logoUrl = "https://s3-symbol-logo.tradingview.com/meta-platforms.svg")
-    ).filter { it.marketCap >= 5_000_000_000.0 }
+        Stock("AVGO", "Broadcom Inc.", "NASDAQ", 182.40, 7.18, 4.10, 5200000000.0, "5.2B", 0.92, "STRONG BREAKOUT", 64.0, "Breakout All-Time High", 175.0, 168.0, "Semiconductors", "Technology", 8.5e11, "Catalyst: AI Custom Chips", 178.0, 185.0, 198.0, 210.0, 175.0, logoUrl = "https://logo.clearbit.com/broadcom.com"),
+        Stock("QCOM", "Qualcomm Inc.", "NASDAQ", 169.20, 5.24, 3.20, 3800000000.0, "3.8B", 0.82, "GOLDEN CROSS", 58.0, "EMA 20/50 Cross", 162.0, 155.0, "Wireless Tech", "Technology", 1.8e11, "Support dinamis MA200 mantul", 165.0, 175.0, 184.0, 195.0, 162.0, logoUrl = "https://logo.clearbit.com/qualcomm.com"),
+        Stock("CRM", "Salesforce Inc.", "NYSE", 288.50, 7.72, 2.75, 4100000000.0, "4.1B", 0.80, "BULL FLAG", 61.0, "Consolidation Breakout", 280.0, 272.0, "Cloud Software", "Technology", 2.8e11, "Saluran konsolidasi 14 hari", 282.0, 295.0, 304.0, 320.0, 278.0, logoUrl = "https://logo.clearbit.com/salesforce.com"),
+        Stock("META", "Meta Platforms Inc.", "NASDAQ", 588.00, 10.96, 1.90, 8900000000.0, "8.9B", 0.88, "TREND STRONG", 65.0, "Higher High Momentum", 570.0, 550.0, "Interactive Media", "Communication", 1.5e12, "Histogram MACD melebar", 575.0, 600.0, 620.0, 650.0, 568.0, logoUrl = "https://logo.clearbit.com/meta.com")
+    )
 
     LazyColumn(
         modifier = Modifier
